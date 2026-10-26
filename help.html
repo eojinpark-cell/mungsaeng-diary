@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>도움말 — 멍생일기</title>
+<meta name="description" content="아기 강아지부터 무지개다리까지, 한 강아지의 일생을 함께하는 웹 게임">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="help" data-stage="teen">
+<header class="site-header">
+  <a class="logo" href="index.html"><img src="images/favicon.svg" alt="" width="34" height="34">멍생일기</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">메뉴</button>
+  <nav class="nav" id="nav" aria-label="주 메뉴">
+    <a href="index.html" data-page="home">처음으로</a>
+    <a href="game.html" data-page="game">키우기</a>
+    <a href="album.html" data-page="album">추억 앨범</a>
+    <a href="help.html" data-page="help">도움말</a>
+  </nav>
+</header>
+
+<main class="page">
+  <h1>도움말</h1>
+  <dl class="faq">
+    <dt>시간은 어떻게 흘러요?</dt>
+    <dd>밥 주기, 산책, 공놀이, 목욕, 낮잠 중 하나를 할 때마다 시간이 흘러요. 첫 1년은 한 달씩, 그 뒤로는 반년씩 자라요. 말 걸기는 시간을 쓰지 않아요.</dd>
+    <dt>강아지가 아프거나 일찍 떠나나요?</dt>
+    <dd>아니요. 돌봄이 부족하면 표정이 시무룩해지고 상태 막대가 빨개질 뿐이에요. 모든 강아지는 13~16살까지 살다가 무지개다리를 건너요.</dd>
+    <dt>무지개다리를 건너면 어떻게 돼요?</dt>
+    <dd>하늘을 보며 함께한 시간을 돌아볼 수 있어요. ‘하늘나라 편지 받기’를 누르면 AI가 강아지의 추억을 바탕으로 편지를 써 줘요. 편지는 추억 앨범에 남아요.</dd>
+    <dt>말 걸기가 안 돼요.</dt>
+    <dd>빈칸이면 보낼 수 없어요. ‘오래 걸리고 있어요’가 보이면 조금 기다려 주세요. 25초가 넘으면 자동으로 멈추니 잠시 뒤 다시 시도해 주세요. 하루 사용량이 다 차면 쉬었다가 다시 말을 걸어 주세요.</dd>
+    <dt>기록은 어디에 저장돼요?</dt>
+    <dd>지금 쓰고 있는 브라우저에만 저장돼요. 다른 기기나 시크릿 창에서는 보이지 않아요. 말 걸기 내용은 답장을 만들 때만 AI로 보내지고 서버에 따로 저장하지 않아요.</dd>
+    <dt>처음부터 다시 하고 싶어요.</dt>
+    <dd><button id="reset" class="btn ghost small" type="button">모든 기록 지우기</button></dd>
+  </dl>
+</main>
+<footer class="site-footer">
+  <p>멍생일기 · 강아지와의 기록은 이 브라우저에만 저장돼요.</p>
+</footer>
+<script src="js/common.js"></script>
+<script>
+document.getElementById("reset").addEventListener("click", () => {
+  if (confirm("키우던 강아지와 하늘나라 강아지 기록이 모두 지워져요. 지울까요?")) {
+    localStorage.removeItem(STORE_KEY);
+    location.href = "game.html";
+  }
+});
+</script>
+</body>
+</html>

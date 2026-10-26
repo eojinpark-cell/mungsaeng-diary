@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>추억 앨범 — 멍생일기</title>
+<meta name="description" content="아기 강아지부터 무지개다리까지, 한 강아지의 일생을 함께하는 웹 게임">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="album" data-stage="adult">
+<header class="site-header">
+  <a class="logo" href="index.html"><img src="images/favicon.svg" alt="" width="34" height="34">멍생일기</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">메뉴</button>
+  <nav class="nav" id="nav" aria-label="주 메뉴">
+    <a href="index.html" data-page="home">처음으로</a>
+    <a href="game.html" data-page="game">키우기</a>
+    <a href="album.html" data-page="album">추억 앨범</a>
+    <a href="help.html" data-page="help">도움말</a>
+  </nav>
+</header>
+
+<main class="page">
+  <h1>추억 앨범</h1>
+  <h2>지금 함께하는 강아지</h2>
+  <div id="now"></div>
+  <h2>하늘나라 강아지들</h2>
+  <div id="stars" class="stars"></div>
+</main>
+<footer class="site-footer">
+  <p>멍생일기 · 강아지와의 기록은 이 브라우저에만 저장돼요.</p>
+</footer>
+<script src="js/common.js"></script>
+<script src="js/album.js"></script>
+</body>
+</html>

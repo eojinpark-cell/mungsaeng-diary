@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>멍생일기 — 아기 강아지부터 무지개다리까지</title>
+<meta name="description" content="아기 강아지부터 무지개다리까지, 한 강아지의 일생을 함께하는 웹 게임">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="home" data-stage="spring">
+<header class="site-header">
+  <a class="logo" href="index.html"><img src="images/favicon.svg" alt="" width="34" height="34">멍생일기</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">메뉴</button>
+  <nav class="nav" id="nav" aria-label="주 메뉴">
+    <a href="index.html" data-page="home">처음으로</a>
+    <a href="game.html" data-page="game">키우기</a>
+    <a href="album.html" data-page="album">추억 앨범</a>
+    <a href="help.html" data-page="help">도움말</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-text">
+      <h1>한 강아지의 일생을<br>처음부터 끝까지.</h1>
+      <p>밥 주고, 산책하고, 말을 걸어 보세요. 아기 강아지는 자라서 어른이 되고, 언젠가 무지개다리를 건너 하늘나라에서 편지를 보내요.</p>
+      <a class="btn" href="game.html">강아지 입양하기</a>
+    </div>
+    <div class="hero-dog" id="hero-dog" aria-hidden="true"></div>
+    <div class="grass" aria-hidden="true"></div>
+  </section>
+
+  <section class="life">
+    <h2>강아지의 하루는 우리의 몇 달이에요</h2>
+    <p class="lead">돌봐 줄 때마다 시간이 흘러요. 처음 1년은 한 번에 한 달씩, 그 뒤로는 반년씩 자라요.</p>
+    <ol class="life-steps">
+      <li data-s="baby"><div class="mini" data-stage="baby"></div><b>아기 강아지</b><span>1살까지</span></li>
+      <li data-s="teen"><div class="mini" data-stage="teen"></div><b>꼬마 강아지</b><span>3살까지</span></li>
+      <li data-s="adult"><div class="mini" data-stage="adult"></div><b>어른 강아지</b><span>8살까지</span></li>
+      <li data-s="senior"><div class="mini" data-stage="senior"></div><b>노견</b><span>13~16살</span></li>
+      <li data-s="heaven"><div class="mini" data-stage="heaven"></div><b>하늘나라</b><span>무지개다리 너머</span></li>
+    </ol>
+  </section>
+
+  <section class="talk-intro">
+    <div>
+      <h2>말을 걸면 강아지가 대답해요</h2>
+      <p>AI가 강아지의 나이와 기분에 맞춰 대답해요. 아기 때는 서툴게, 노견이 되면 느긋하고 다정하게. 배가 고프면 티를 내기도 해요.</p>
+    </div>
+    <div class="chat-sample" aria-label="대화 예시">
+      <p class="me">오늘 산책 재밌었어?</p>
+      <p class="pup">응! 풀 냄새 맡느라 바빴어. 근데 지금 배가 조금 고파… 🍖</p>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <p>멍생일기 · 강아지와의 기록은 이 브라우저에만 저장돼요.</p>
+</footer>
+<script src="js/common.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("hero-dog").innerHTML = dogSvg("baby", "cream", "happy");
+  document.querySelectorAll(".mini").forEach((el) => { el.innerHTML = dogSvg(el.dataset.stage, "cream", "happy"); });
+});
+</script>
+</body>
+</html>

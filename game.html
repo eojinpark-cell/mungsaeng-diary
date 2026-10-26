@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>키우기 — 멍생일기</title>
+<meta name="description" content="아기 강아지부터 무지개다리까지, 한 강아지의 일생을 함께하는 웹 게임">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="game" data-stage="spring">
+<header class="site-header">
+  <a class="logo" href="index.html"><img src="images/favicon.svg" alt="" width="34" height="34">멍생일기</a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">메뉴</button>
+  <nav class="nav" id="nav" aria-label="주 메뉴">
+    <a href="index.html" data-page="home">처음으로</a>
+    <a href="game.html" data-page="game">키우기</a>
+    <a href="album.html" data-page="album">추억 앨범</a>
+    <a href="help.html" data-page="help">도움말</a>
+  </nav>
+</header>
+
+<main class="game">
+  <section id="adopt" class="adopt" hidden>
+    <h1>어떤 강아지를 데려올까요?</h1>
+    <form id="adopt-form" novalidate>
+      <label for="adopt-name">이름</label>
+      <input id="adopt-name" maxlength="10" placeholder="예: 보리" autocomplete="off">
+      <fieldset>
+        <legend>털 색</legend>
+        <label class="fur"><input type="radio" name="fur" value="cream" checked><span class="swatch cream"></span>크림</label>
+        <label class="fur"><input type="radio" name="fur" value="choco"><span class="swatch choco"></span>초코</label>
+        <label class="fur"><input type="radio" name="fur" value="snow"><span class="swatch snow"></span>눈송이</label>
+      </fieldset>
+      <p id="adopt-status" class="status error" role="alert"></p>
+      <button class="btn" type="submit">입양하기</button>
+    </form>
+  </section>
+
+  <section id="play-area" class="play-area" hidden>
+    <div class="scene">
+      <div class="rainbow" aria-hidden="true"></div>
+      <p id="bubble" class="bubble" aria-live="polite"></p>
+      <div id="dog-stage" class="dog-stage"></div>
+      <div class="grass" aria-hidden="true"></div>
+    </div>
+
+    <div class="panel">
+      <div class="dog-head">
+        <h1 id="dog-name"></h1>
+        <p id="dog-age" class="muted"></p>
+      </div>
+      <div class="life-bar" aria-label="일생 진행도"><i id="life-fill"></i></div>
+      <div id="stats" class="stats"></div>
+      <div id="actions" class="actions"></div>
+
+      <section id="talk" class="talk">
+        <h2>말 걸기</h2>
+        <form id="talk-form" novalidate>
+          <label for="talk-input" class="sr-only">강아지에게 할 말</label>
+          <textarea id="talk-input" maxlength="200" rows="2" placeholder="예: 오늘 기분 어때?"></textarea>
+          <div class="talk-row"><span class="muted"><span id="talk-count">0</span>/200</span><button id="talk-send" class="btn small" type="submit">말 걸기</button></div>
+          <p id="talk-status" class="status" role="status"></p>
+        </form>
+        <ul id="talk-log" class="talk-log"></ul>
+      </section>
+
+      <section id="heaven" class="heaven-box" hidden>
+        <h2 id="heaven-title"></h2>
+        <p id="heaven-sub" class="muted"></p>
+        <button id="letter-btn" class="btn" type="button">하늘나라 편지 받기</button>
+        <p id="letter-status" class="status" role="status"></p>
+        <blockquote id="letter-box" class="letter" hidden><p id="letter-text"></p></blockquote>
+        <div class="heaven-links">
+          <a href="album.html">추억 앨범 보기</a>
+          <button id="again-btn" class="btn ghost" type="button">새 강아지 입양하기</button>
+        </div>
+      </section>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <p>멍생일기 · 강아지와의 기록은 이 브라우저에만 저장돼요.</p>
+</footer>
+<script src="js/common.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
