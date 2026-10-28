@@ -5,7 +5,7 @@
 잘 키우면 뼈다귀(게임 화폐)가 쌓여 상점에서 집과 옷, 모자를 살 수 있어요. 콤보, 황금 뼈다귀, 공 잡기 미니게임, 업적 15종이 계속 하고 싶게 만들고, **어떻게 키웠는지에 따라 5가지 무지개다리 엔딩** 중 하나를 건넙니다.
 AI는 대화(친밀도 게임), 성장 일기, 랜덤 이벤트, 하늘나라 편지까지 4곳에서 쓰입니다. 한 번에 하나씩 나오는 퀘스트가 할 일을 알려 줍니다.
 
-- 배포 URL: https://(배포 후 Vercel 주소 입력).vercel.app
+- 배포 URL: https://mungsaeng-diary.vercel.app
 - 서비스 기획서: [docs/서비스기획서.md](docs/서비스기획서.md)
 
 ## 주요 기능
@@ -119,7 +119,7 @@ API 키는 코드에 넣지 않고 Vercel 환경 변수로만 관리합니다.
 | 이름 | 필수 | 설명 |
 |---|---|---|
 | `GEMINI_API_KEY` | 필수 | Google AI Studio에서 발급한 키 |
-| `GEMINI_MODEL` | 선택 | 기본값 `gemini-2.5-flash`. 배포에서는 `gemini-3.8-flash` 사용 |
+| `GEMINI_MODEL` | 선택 | 기본값 `gemini-2.5-flash`. 배포에서는 응답이 빠른 `gemini-3.5-flash-lite` 사용 |
 | `GEMINI_THINKING` | 선택 | 기본값 `minimal`(응답 속도 우선). `off`면 설정을 보내지 않음 |
 
 설정 위치: Vercel 프로젝트 → Settings → Environment Variables. 값을 바꾼 뒤에는 **Redeploy** 해야 반영됩니다.
@@ -146,6 +146,7 @@ Claude(Anthropic)로 기획, 화면, 코드, 테스트를 진행했습니다. �
 
 | 문제 | 원인 | 수정 |
 |---|---|---|
+| 생각 단계를 줄여도 배포 사이트에서 계속 25초 시간 초과 | `gemini-3.8-flash`는 무료 키에서 응답이 너무 느림 | 코드 수정 없이 Vercel 환경 변수 `GEMINI_MODEL`을 가장 빠른 `gemini-3.5-flash-lite`로 바꾸고 재배포 → 정상 응답 확인 |
 | 배포 후 말 걸기가 "너무 오래 고민" 오류로 실패 | Gemini 3 계열 모델은 기본으로 '생각(thinking)'을 길게 해서 서버 제한 시간(20초)을 넘김 | `thinkingConfig.thinkingLevel=minimal` 지정, 답변 길이 축소, 서버 25초·함수 30초(`vercel.json`)로 조정. 모델이 설정을 모르면 설정을 빼고 자동 재시도 |
 | 엔딩 후에도 돌보기 버튼이 보임 | CSS `display: grid`가 HTML `hidden` 속성을 덮어씀 | `[hidden]{display:none!important}` 추가 |
 | 산책 배경이 강아지를 가림 | 배경이 효과 레이어(가장 위)에 들어가 있었음 | 배경 전용 레이어(`#scene-back`)를 강아지 뒤에 추가 |
