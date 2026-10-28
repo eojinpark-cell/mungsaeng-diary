@@ -26,39 +26,105 @@
 <main class="game">
   <section id="adopt" class="adopt" hidden>
     <h1>어떤 강아지를 데려올까요?</h1>
-    <form id="adopt-form" novalidate>
-      <label for="adopt-name">이름</label>
-      <input id="adopt-name" maxlength="10" placeholder="예: 보리" autocomplete="off">
-      <fieldset>
-        <legend>털 색</legend>
-        <label class="fur"><input type="radio" name="fur" value="cream" checked><span class="swatch cream"></span>크림</label>
-        <label class="fur"><input type="radio" name="fur" value="choco"><span class="swatch choco"></span>초코</label>
-        <label class="fur"><input type="radio" name="fur" value="snow"><span class="swatch snow"></span>눈송이</label>
-      </fieldset>
-      <p id="adopt-status" class="status error" role="alert"></p>
-      <button class="btn" type="submit">입양하기</button>
-    </form>
+    <div class="adopt-grid">
+      <div id="adopt-preview" class="adopt-preview" aria-hidden="true"></div>
+      <form id="adopt-form" novalidate>
+        <fieldset>
+          <legend>얼굴</legend>
+          <div class="face-grid">
+            <label class="face-opt" data-face="floppy"><input type="radio" name="face" value="floppy" checked><span class="face-mini"></span>축 처진 귀</label>
+            <label class="face-opt" data-face="pointy"><input type="radio" name="face" value="pointy"><span class="face-mini"></span>쫑긋 귀</label>
+            <label class="face-opt" data-face="fluffy"><input type="radio" name="face" value="fluffy"><span class="face-mini"></span>몽실 털</label>
+            <label class="face-opt" data-face="patch"><input type="radio" name="face" value="patch"><span class="face-mini"></span>얼룩 눈</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>털 색</legend>
+          <label class="fur"><input type="radio" name="fur" value="cream" checked><span class="swatch cream"></span>크림</label>
+          <label class="fur"><input type="radio" name="fur" value="choco"><span class="swatch choco"></span>초코</label>
+          <label class="fur"><input type="radio" name="fur" value="snow"><span class="swatch snow"></span>눈송이</label>
+        </fieldset>
+        <label for="adopt-name">이름</label>
+        <input id="adopt-name" maxlength="10" placeholder="예: 보리" autocomplete="off">
+        <p id="adopt-status" class="status error" role="alert"></p>
+        <button class="btn" type="submit">입양하기</button>
+      </form>
+    </div>
   </section>
 
   <section id="play-area" class="play-area" hidden>
-    <div class="scene">
+    <div id="scene" class="scene" data-anim="">
       <div class="rainbow" aria-hidden="true"></div>
+      <div id="scene-decor" class="scene-decor"></div>
+      <div id="scene-back" class="scene-back" aria-hidden="true"></div>
+      <div id="scene-house" class="scene-house" aria-hidden="true"></div>
       <p id="bubble" class="bubble" aria-live="polite"></p>
-      <div id="dog-stage" class="dog-stage"></div>
+      <div id="dog-stage" class="dog-stage" title="쓰다듬기"></div>
+      <div id="scene-fx" class="scene-fx" aria-hidden="true"></div>
+      <div id="mess" class="mess"></div>
+      <p id="lonely" class="lonely" hidden></p>
       <div class="grass" aria-hidden="true"></div>
+
+      <div id="event" class="event-card" hidden role="dialog" aria-labelledby="event-title">
+        <h2 id="event-title"></h2>
+        <p id="event-text"></p>
+        <div id="event-choices" class="event-choices"></div>
+        <p id="event-result" class="event-result"></p>
+        <p id="event-status" class="status" role="status"></p>
+        <button id="event-close" class="btn small" type="button" hidden>계속 키우기</button>
+      </div>
     </div>
 
     <div class="panel">
       <div class="dog-head">
-        <h1 id="dog-name"></h1>
-        <p id="dog-age" class="muted"></p>
+        <div>
+          <h1 id="dog-name"></h1>
+          <p id="dog-age" class="muted"></p>
+        </div>
+        <div class="head-side">
+          <span id="dog-mood" class="mood-chip"></span>
+          <span id="combo-chip" class="combo-chip" hidden></span>
+          <button id="shop-btn" type="button" class="shop-btn">🦴 <span id="coin-count">0</span> · 상점</button>
+          <a class="badge-link" href="album.html#badges">🏅 업적 <span id="badge-count">0/13</span></a>
+        </div>
       </div>
       <div class="life-bar" aria-label="일생 진행도"><i id="life-fill"></i></div>
+      <p id="ending-hint" class="ending-hint"></p>
       <div id="stats" class="stats"></div>
-      <div id="actions" class="actions"></div>
 
-      <section id="talk" class="talk">
+      <p id="quest-list" class="quest-line" aria-label="퀘스트"></p>
+
+      <section id="care" class="block">
+        <h2>돌보기 <small class="muted">누를 때마다 시간이 흘러요</small></h2>
+        <div id="actions" class="actions"></div>
+      </section>
+
+      <section id="interact" class="block">
+        <h2>함께 놀기 <small class="muted">시간이 흐르지 않아요</small></h2>
+        <div class="interact-row">
+          <button id="pet-btn" type="button" class="act small"><span aria-hidden="true">🖐️</span>쓰다듬기</button>
+          <button id="bark-btn" type="button" class="act small"><span aria-hidden="true">🔊</span>짖어!</button>
+          <div class="sound-ctl">
+            <label class="switch"><input id="sound-on" type="checkbox"> 소리</label>
+            <label for="sound-vol" class="sr-only">음량</label>
+            <input id="sound-vol" type="range" min="0" max="1" step="0.05">
+          </div>
+        </div>
+        <p class="muted small-note">훈련 — 성공할수록 잘 배워요</p>
+        <div id="tricks" class="tricks"></div>
+      </section>
+
+      <section id="diary" class="block diary" hidden>
+        <h2 id="diary-title"></h2>
+        <p id="diary-text"></p>
+        <p id="diary-status" class="status" role="status"></p>
+      </section>
+
+      <section id="talk" class="block talk">
         <h2>말 걸기</h2>
+        <div class="aff"><span id="aff-label"></span><span class="aff-bar"><i id="aff-fill"></i></span></div>
+        <p id="topic-chip" class="topic-chip"></p>
+        <p class="muted small-note">다정한 말, 칭찬, 관심을 보이면 마음이 통해서 행복·친밀도·뼈다귀가 올라가요.</p>
         <form id="talk-form" novalidate>
           <label for="talk-input" class="sr-only">강아지에게 할 말</label>
           <textarea id="talk-input" maxlength="200" rows="2" placeholder="예: 오늘 기분 어때?"></textarea>
@@ -70,6 +136,7 @@
 
       <section id="heaven" class="heaven-box" hidden>
         <h2 id="heaven-title"></h2>
+        <p id="heaven-desc" class="heaven-desc"></p>
         <p id="heaven-sub" class="muted"></p>
         <button id="letter-btn" class="btn" type="button">하늘나라 편지 받기</button>
         <p id="letter-status" class="status" role="status"></p>
@@ -81,11 +148,25 @@
       </section>
     </div>
   </section>
+
+  <div id="shop" class="shop" hidden role="dialog" aria-labelledby="shop-title">
+    <div class="shop-sheet">
+      <div class="shop-head">
+        <h2 id="shop-title">상점</h2>
+        <span class="shop-coins">🦴 <span id="shop-coins">0</span></span>
+        <button id="shop-close" type="button" class="btn small ghost">닫기</button>
+      </div>
+      <p class="muted small-note">잘 돌보면 뼈다귀를 받아요. 상태가 좋을수록, 재주를 배우거나 자랄 때 더 많이 받아요.</p>
+      <div id="shop-tabs" class="shop-tabs"></div>
+      <ul id="shop-list" class="shop-list"></ul>
+    </div>
+  </div>
 </main>
 <footer class="site-footer">
   <p>멍생일기 · 강아지와의 기록은 이 브라우저에만 저장돼요.</p>
 </footer>
 <script src="js/common.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
