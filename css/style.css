@@ -622,3 +622,62 @@ body[data-ending="rain"] .scene::after { content: ""; position: absolute; inset:
 .scene[data-anim="zoomies"] .pose-side .leg-fn, .scene[data-anim="zoomies"] .pose-side .leg-bf { animation: gaitA .34s linear infinite; }
 .scene[data-anim="play"] .pose-side .leg-ff, .scene[data-anim="play"] .pose-side .leg-bn,
 .scene[data-anim="zoomies"] .pose-side .leg-ff, .scene[data-anim="zoomies"] .pose-side .leg-bn { animation: gaitB .34s linear infinite; }
+
+/* ===== v12: 큰 집, 장난감, 화면 전환, 장소 ===== */
+.scene-house { width: min(46%, 230px); right: 1%; bottom: 38px; }
+.scene-toy { position: absolute; z-index: 1; left: 6%; bottom: 52px; width: min(16%, 70px); pointer-events: none; }
+.scene-toy svg { width: 100%; height: auto; display: block; }
+.scene[data-bg]:not([data-bg=""]) .scene-house, .scene[data-bg]:not([data-bg=""]) .scene-decor, .scene[data-bg]:not([data-bg=""]) .scene-toy { opacity: 0; }
+.scene[data-bg="feed"] .grass { background: #d9a46b; border-radius: 0; box-shadow: inset 0 10px 0 rgba(255,255,255,.2); }
+.scene[data-bg="bath"] .grass { background: #b9d9f0; border-radius: 0; box-shadow: inset 0 10px 0 rgba(255,255,255,.35); }
+.scene[data-bg="nap"] .grass { background: #5b4a8f; border-radius: 0; box-shadow: inset 0 10px 0 rgba(255,255,255,.12); }
+.scene[data-bg="nap"] .dog-stage { filter: brightness(.85); }
+.scene[data-bg="nap"] .dog-root { transform: translateY(28px) scaleY(.82); }
+.curtain { position: absolute; inset: 0; z-index: 9; background: radial-gradient(circle at 50% 45%, #3a3f6b, #232744); clip-path: circle(0% at 50% 55%); transition: clip-path .38s ease-in-out; pointer-events: none; }
+.curtain.on { clip-path: circle(80% at 50% 55%); }
+.scene[data-anim="tohouse"] .dog-stage { animation: tohouse 1s ease-in forwards; }
+@keyframes tohouse { to { transform: translateX(48%) scale(.55); opacity: .15; } }
+.scene[data-anim="tohouse"] .pose-side .leg-fn, .scene[data-anim="tohouse"] .pose-side .leg-bf { animation: gaitA .5s linear infinite; }
+.scene[data-anim="tohouse"] .pose-side .leg-ff, .scene[data-anim="tohouse"] .pose-side .leg-bn { animation: gaitB .5s linear infinite; }
+.leash { display: none; }
+@media (prefers-reduced-motion: reduce) { .curtain { transition: none; } }
+
+/* ===== v13: 부드러운 장소 전환, 터치로 이동 ===== */
+.backdrop { animation: fadein .45s ease both; }
+.dog-pos { position: relative; z-index: 2; display: flex; justify-content: center; transition-property: transform; transition-timing-function: linear; will-change: transform; }
+.dog-pos.face-left .dog-stage { transform: scaleX(-1); }
+.scene { cursor: pointer; }
+.scene[data-anim="move"] .pose-side .leg-fn, .scene[data-anim="move"] .pose-side .leg-bf { animation: gaitA .5s linear infinite; }
+.scene[data-anim="move"] .pose-side .leg-ff, .scene[data-anim="move"] .pose-side .leg-bn { animation: gaitB .5s linear infinite; }
+.scene[data-anim="move"] .pose-side .dog-root { animation: gaitBody .5s ease-in-out infinite; }
+.dog-pos { width: min(260px, 70%); margin-bottom: 30px; }
+.dog-pos .dog-stage { width: 100%; margin-bottom: 0; }
+@media (max-width: 900px) { .dog-pos { width: min(210px, calc(44vh - 100px)); margin-bottom: 26px; } }
+.dog-pos .dog-stage { transition: none; }
+
+/* ===== v14: 집 안·마당 포탈, 점프, 장식 겹침 방지 ===== */
+.scene-place { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.scene-place .room { position: absolute; inset: 0; width: 100%; height: 100%; animation: fadein .45s ease both; }
+.room-floor-wrap { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; }
+.room-floor-wrap svg { width: 100%; height: 100%; display: block; }
+.scene[data-place="home"] .grass, .scene[data-place="home"] .scene-decor, .scene[data-place="home"] .scene-house { display: none; }
+.door { position: absolute; z-index: 1; left: 3%; bottom: 40px; width: min(15%, 66px); display: none; cursor: pointer; }
+.door svg { width: 100%; height: auto; display: block; }
+.scene[data-place="home"] .door { display: block; }
+.scene[data-place="home"] .scene-toy { left: 20%; bottom: 36px; }
+.scene-house { pointer-events: auto; cursor: pointer; }
+.scene-house:active, .door:active { transform: scale(.96); }
+.scene[data-bg]:not([data-bg=""]) .scene-place, .scene[data-bg]:not([data-bg=""]) .door { opacity: 0; pointer-events: none; }
+.scene.has-toy .scene-decor .dl { display: none; }
+.scene.has-house .scene-decor .dr { display: none; }
+.scene.place-fade .scene-place { animation: fadein .3s ease both; }
+.scene[data-anim="enter"] .dog-stage { animation: enter .65s ease-in forwards; }
+@keyframes enter { to { transform: translateY(-14px) scale(.45); opacity: 0; } }
+.scene[data-anim="hop"] .dog-root { transform-box: fill-box; transform-origin: 50% 100%; animation: hop .8s cubic-bezier(.3,.7,.4,1) both; }
+@keyframes hop { 0% { transform: none; } 18% { transform: translateY(4px) scale(1.06, .86); } 50% { transform: translateY(-72px) scale(.95, 1.08); } 82% { transform: translateY(0) scale(1.08, .9); } 100% { transform: none; } }
+.portal-fx { position: absolute; z-index: 7; bottom: 30%; width: 0; height: 0; pointer-events: none; }
+.portal-fx span { position: absolute; left: -14px; top: -16px; font-size: 1.8rem; animation: spinpop .9s ease-out both; }
+.portal-fx i { position: absolute; left: 0; top: 0; width: 5px; height: 26px; border-radius: 3px; background: linear-gradient(#fff6a8, #ff9ab6); transform-origin: 50% 0; transform: rotate(var(--a)) translateY(10px); animation: ray .9s ease-out var(--d) forwards; }
+/* 강아지 그림의 빈 영역은 터치를 통과시켜 뒤의 집·바닥을 누를 수 있게 */
+.dog-pos, .dog-pos .dog-stage, .dog-pos .dog-svg { pointer-events: none; }
+.dog-pos .dog-root { pointer-events: visiblePainted; }

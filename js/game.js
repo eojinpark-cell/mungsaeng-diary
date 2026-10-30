@@ -9,7 +9,7 @@ const ACTIONS = {
     lines: { baby: ["냠냠… 우유 냄새 나!", "다 먹었어! 또 줘!"], teen: ["와구와구!", "그릇까지 핥을 거야!"], adult: ["역시 우리 집 밥이 최고야", "천천히 먹을게, 진짜야"], senior: ["부드러워서 좋다…", "고마워, 꼭꼭 씹어 먹을게"] },
   },
   walk: {
-    label: "산책하기", emoji: "🦮", anim: "walk", ms: 3200, expr: "joy", sound: "steps", pose: "side",
+    label: "산책하기", emoji: "🦮", anim: "walk", ms: 3200, expr: "joy", sound: "steps", pose: "side", leash: true,
     effect: { 행복: 16, 건강: 15, 배부름: -10, 청결: -14 },
     byStage: { baby: { 건강: 8, 청결: -18 }, senior: { 행복: 10, 건강: 7 } },
     lines: { baby: ["바깥은 처음이야! 무서워!", "풀이 발바닥을 간질여"], teen: ["저기 비둘기다!", "킁킁, 여기 친구 냄새 나!"], adult: ["우리 산책 코스 다 외웠지", "보호자랑 걷는 게 제일 좋아"], senior: ["천천히 가자… 바람 좋다", "예전엔 저기까지 뛰었는데"] },
@@ -27,7 +27,7 @@ const ACTIONS = {
     lines: { baby: ["물 차가워! 낑낑", "보송보송해졌다"], teen: ["으악 물이다!", "부르르르! 다 털 거야"], adult: ["목욕은 참는 거야…", "개운하다!"], senior: ["따뜻한 물 좋네", "털 말려 줘서 고마워"] },
   },
   nap: {
-    label: "낮잠 재우기", emoji: "💤", anim: "nap", ms: 3000, expr: "sleep", sound: "snore",
+    label: "낮잠 재우기", emoji: "💤", anim: "nap", ms: 3000, expr: "sleep", sound: "snore", prop: "bed",
     effect: { 건강: 22, 배부름: -5, 행복: 3 },
     byStage: { baby: { 건강: 28 }, senior: { 건강: 30, 행복: 6 } },
     lines: { baby: ["쿨쿨… 엄마 꿈 꿨어", "하암~"], teen: ["꿈에서 공 잡았어", "잘 잤다!"], adult: ["햇볕 낮잠 최고", "개운해"], senior: ["낮잠이 제일 좋아…", "보호자 옆이라 푹 잤어"] },
@@ -72,6 +72,24 @@ let busy = false;
 let tempExpr = null;
 let tempPose = null;
 let tempProp = null;
+let tempLeash = false;
+let tempView = null;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// 화면 전환: 동그랗게 닫혔다가 새 장소로 열림
+async function curtain(fn) {
+  fn();
+  await sleep(120);
+}
+function setScene({ anim = "", bg = "", expr = null, pose = null, prop = null, leash = false } = {}) {
+  const scene = $("scene");
+  scene.dataset.anim = anim;
+  scene.dataset.bg = bg;
+  $("scene-back").innerHTML = BACK[bg] || "";
+  $("scene-fx").innerHTML = anim && PROPS[anim] ? PROPS[anim](state.dog) : "";
+  if (bg) moveDogTo(0, true);
+  tempExpr = expr; tempPose = pose; tempProp = prop; tempLeash = leash; tempView = null;
+  renderDog();
+}
 const $ = (id) => document.getElementById(id);
 
 // ---------- 상태 ----------
@@ -105,12 +123,26 @@ function stageIndex(id) { return STAGE_ORDER.indexOf(id); }
 
 // ---------- 그리기 ----------
 const DECOR = {
-  baby: `<svg viewBox="0 0 400 120" aria-hidden="true"><ellipse cx="300" cy="96" rx="80" ry="16" fill="#ffd6e4"/><path d="M228 92 q72 -26 144 0" fill="#ffc2d6"/><g transform="translate(70 70)"><ellipse cx="0" cy="18" rx="20" ry="14" fill="#ffd84d"/><circle cx="10" cy="2" r="11" fill="#ffd84d"/><path d="M19 2 l10 3 l-10 4 z" fill="#ff9a3c"/><circle cx="12" cy="-1" r="2" fill="#333"/></g></svg>`,
-  teen: `<svg viewBox="0 0 400 120" aria-hidden="true"><g transform="translate(60 84) rotate(-12)"><rect x="-26" y="-6" width="52" height="12" rx="6" fill="#fff"/><circle cx="-26" cy="-6" r="8" fill="#fff"/><circle cx="-26" cy="6" r="8" fill="#fff"/><circle cx="26" cy="-6" r="8" fill="#fff"/><circle cx="26" cy="6" r="8" fill="#fff"/></g><circle cx="330" cy="90" r="14" fill="#c7e85a"/><path d="M318 84 q12 8 24 0" stroke="#fff" stroke-width="2" fill="none"/></svg>`,
-  adult: `<svg viewBox="0 0 400 120" aria-hidden="true"><rect x="40" y="88" width="34" height="14" rx="6" fill="#7fb7e8"/></svg>`,
-  senior: `<svg viewBox="0 0 400 120" aria-hidden="true"><ellipse cx="320" cy="96" rx="70" ry="18" fill="#c9b8ef"/><ellipse cx="320" cy="90" rx="56" ry="10" fill="#e4dbfa"/><g transform="translate(70 60)"><rect x="-4" y="0" width="8" height="40" rx="3" fill="#b07a4f"/><path d="M-4 0 q4 -16 18 -10" stroke="#b07a4f" stroke-width="7" fill="none" stroke-linecap="round"/></g></svg>`,
+  baby: `<svg viewBox="0 0 400 120" aria-hidden="true"><g class="dr"><ellipse cx="300" cy="96" rx="80" ry="16" fill="#ffd6e4"/><path d="M228 92 q72 -26 144 0" fill="#ffc2d6"/></g><g class="dl" transform="translate(70 70)"><ellipse cx="0" cy="18" rx="20" ry="14" fill="#ffd84d"/><circle cx="10" cy="2" r="11" fill="#ffd84d"/><path d="M19 2 l10 3 l-10 4 z" fill="#ff9a3c"/><circle cx="12" cy="-1" r="2" fill="#333"/></g></svg>`,
+  teen: `<svg viewBox="0 0 400 120" aria-hidden="true"><g class="dl" transform="translate(60 84) rotate(-12)"><rect x="-26" y="-6" width="52" height="12" rx="6" fill="#fff"/><circle cx="-26" cy="-6" r="8" fill="#fff"/><circle cx="-26" cy="6" r="8" fill="#fff"/><circle cx="26" cy="-6" r="8" fill="#fff"/><circle cx="26" cy="6" r="8" fill="#fff"/></g><g class="dr"><circle cx="330" cy="90" r="14" fill="#c7e85a"/><path d="M318 84 q12 8 24 0" stroke="#fff" stroke-width="2" fill="none"/></g></svg>`,
+  adult: `<svg viewBox="0 0 400 120" aria-hidden="true"><g class="dl"><rect x="40" y="88" width="34" height="14" rx="6" fill="#7fb7e8"/></g></svg>`,
+  senior: `<svg viewBox="0 0 400 120" aria-hidden="true"><g class="dr"><ellipse cx="320" cy="96" rx="70" ry="18" fill="#c9b8ef"/><ellipse cx="320" cy="90" rx="56" ry="10" fill="#e4dbfa"/></g><g class="dl" transform="translate(70 60)"><rect x="-4" y="0" width="8" height="40" rx="3" fill="#b07a4f"/><path d="M-4 0 q4 -16 18 -10" stroke="#b07a4f" stroke-width="7" fill="none" stroke-linecap="round"/></g></svg>`,
   heaven: `<svg viewBox="0 0 400 120" aria-hidden="true"><ellipse cx="90" cy="80" rx="60" ry="22" fill="#fff" opacity=".7"/><ellipse cx="320" cy="70" rx="70" ry="24" fill="#fff" opacity=".6"/></svg>`,
 };
+
+// 집 안 (포탈로 들어가는 공간)
+const HOME_ROOM = `<svg class="room" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <defs><pattern id="wallp" width="28" height="28" patternUnits="userSpaceOnUse"><rect width="28" height="28" fill="#fff4ea"/><circle cx="14" cy="14" r="2.5" fill="#ffd6e4"/><circle cx="0" cy="0" r="2" fill="#d6ecff"/><circle cx="28" cy="28" r="2" fill="#d6ecff"/></pattern></defs>
+  <rect width="400" height="300" fill="url(#wallp)"/>
+  <rect y="196" width="400" height="10" fill="#e8c9a8"/>
+  <g transform="translate(250 40)"><rect width="110" height="86" rx="8" fill="#bfe6ff" stroke="#fff" stroke-width="7"/><path d="M55 0 v86 M0 43 h110" stroke="#fff" stroke-width="5"/><circle cx="84" cy="22" r="10" fill="#fff3a6"/><path d="M-6 -6 q30 30 0 100 M116 -6 q-30 30 0 100" fill="#ffc2d6" opacity=".9"/></g>
+  <g transform="translate(150 50)"><rect width="56" height="44" rx="4" fill="#fff" stroke="#e0b07a" stroke-width="5"/><circle cx="28" cy="22" r="11" fill="#f3d9a8"/><circle cx="23" cy="20" r="1.8" fill="#333"/><circle cx="33" cy="20" r="1.8" fill="#333"/><path d="M16 14 q4 -8 8 0 M32 14 q4 -8 8 0" fill="#d9a96a"/></g>
+  <g transform="translate(345 150)"><rect x="-4" y="0" width="8" height="50" fill="#b07a4f"/><ellipse cx="0" cy="-6" rx="22" ry="18" fill="#7cc576"/><ellipse cx="-12" cy="4" rx="12" ry="9" fill="#6cbf6a"/><path d="M-14 50 h28 l-4 -16 h-20 z" fill="#e0525f"/></g>
+  <g transform="translate(225 150)"><path d="M0 0 h18 l-6 -30 h-6 z" fill="#ffe48f"/><rect x="7" y="0" width="4" height="46" fill="#9aa6bd"/></g>
+</svg>`;
+const HOME_FLOOR = `<svg class="room-floor" viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden="true"><rect width="400" height="80" fill="#d9a46b"/><g stroke="#c48d55" stroke-width="2">${Array.from({ length: 9 }, (_, i) => `<path d="M${i * 50} 0 v80"/>`).join("")}</g><ellipse cx="200" cy="40" rx="150" ry="26" fill="#ffd6e4"/><ellipse cx="200" cy="40" rx="120" ry="18" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="6 6"/></svg>`;
+const DOOR = `<svg viewBox="0 0 60 110" aria-hidden="true"><rect x="2" y="2" width="56" height="106" rx="6" fill="#b07a4f" stroke="#8c5a35" stroke-width="3"/><rect x="10" y="12" width="40" height="36" rx="4" fill="#c9926a"/><rect x="10" y="58" width="40" height="40" rx="4" fill="#c9926a"/><circle cx="46" cy="60" r="4" fill="#ffd34d"/></svg>`;
+const DEFAULT_HOUSE = `<svg viewBox="0 0 120 110"><path d="M6 54 L60 10 L114 54 Z" fill="#f29e8e"/><rect x="16" y="52" width="88" height="56" fill="#fff4e0"/><rect x="26" y="62" width="22" height="18" fill="#bfe6ff" stroke="#fff" stroke-width="3"/><path d="M62 108 v-34 a15 15 0 0 1 30 0 v34z" fill="#b07a4f"/><circle cx="86" cy="92" r="2.5" fill="#ffd34d"/></svg>`;
 
 function renderDog(exprOverride) {
   const dog = state.dog;
@@ -118,9 +150,11 @@ function renderDog(exprOverride) {
   const mood = moodOf(dog);
   const expr = exprOverride || tempExpr || mood.expr;
   const eq = state.equipped || {};
-  $("dog-stage").innerHTML = dogSvg(stage.id, dog.look, expr, { dirty: !dog.inHeaven && dog.stats.청결 < 30 && tempProp !== "tub", outfit: eq.outfit, hat: eq.hat, pose: tempPose, prop: tempProp });
+  $("dog-stage").innerHTML = dogSvg(stage.id, dog.look, expr, { dirty: !dog.inHeaven && dog.stats.청결 < 30 && tempProp !== "tub", outfit: eq.outfit, hat: eq.hat, pose: tempPose, prop: tempProp, leash: tempLeash, view: tempView });
+  $("scene-toy").innerHTML = !dog.inHeaven && eq.toy ? toySvg(eq.toy) : "";
+  renderPlace();
   $("scene-decor").innerHTML = DECOR[stage.id] || "";
-  $("scene-house").innerHTML = !dog.inHeaven && eq.house ? houseSvg(eq.house) : "";
+  $("scene-house").innerHTML = dog.inHeaven ? "" : eq.house ? houseSvg(eq.house) : DEFAULT_HOUSE;
 }
 
 function render() {
@@ -195,7 +229,7 @@ function setBusy(v) {
 // ---------- 장면 연출 ----------
 const PROPS = {
   feed: () => `<p class="fx-word">냠냠</p>`,
-  walk: () => `<div class="leash"></div><p class="fx-word">킁킁</p>`,
+  walk: () => `<p class="fx-word">킁킁</p>`,
   play: () => `<div class="prop ball"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#c7e85a"/><path d="M4 14 q16 10 32 0 M4 26 q16 -10 32 0" stroke="#fff" stroke-width="2.5" fill="none"/></svg></div><p class="fx-word">잡았다!</p>`,
   bath: () => `${Array.from({ length: 10 }, (_, i) => `<span class="bubble-fx" style="left:${18 + i * 7}%;animation-delay:${i * 0.18}s"></span>`).join("")}<p class="fx-word">부르르!</p>`,
   nap: () => `${["Z", "z", "Z"].map((z, i) => `<span class="zzz" style="animation-delay:${i * 0.7}s">${z}</span>`).join("")}`,
@@ -252,15 +286,28 @@ async function doAction(key) {
   dog.combo = smart ? (dog.combo || 0) + 1 : 0;
   dog.bestCombo = Math.max(dog.bestCombo || 0, dog.combo);
 
+  // 준비 동작 (집 안에서)
+  if (key === "nap") {
+    say(pick(["졸려… 집에 들어갈래", "하암, 내 자리로 갈래"]));
+    await playScene("tohouse", 1000, "sleepy", { pose: "side" });
+  } else if (key === "walk") {
+    say(pick(["산책?! 산책 간다!!", "목줄이다! 신난다!"]));
+    Sound.bark(stage.id, 2);
+    await playScene("stand", 900, "star");
+  }
+  // 장소로 화면 전환
   let catchResult = null;
+  await curtain(() => setScene({ anim: key === "play" ? "" : act.anim, bg: act.anim, expr: act.expr, pose: act.pose, prop: act.prop, leash: act.leash }));
   if (key === "play") {
     say("공 던진다~ 잡아 봐!");
     catchResult = await catchGame();
+    setScene({ anim: "play", bg: "play", expr: catchResult === "miss" ? "surprised" : catchResult === "perfect" ? "star" : "joy", pose: "side" });
   }
   Sound[act.sound] && Sound[act.sound]();
   say(catchResult === "miss" ? "앗, 놓쳤다! 다시 던져 줘!" : catchResult === "perfect" ? "점프 캐치 봤어?!" : pick(act.lines[stage.id] || act.lines.adult));
   if (dog.combo >= 2) comboFx(dog.combo);
-  await playScene(act.anim, act.ms, catchResult === "miss" ? "surprised" : act.expr, { pose: act.pose, prop: act.prop });
+  await sleep(act.ms);
+  await curtain(() => setScene({}));
 
   const eff = Object.assign({}, act.effect, (act.byStage || {})[stage.id] || {});
   if (catchResult === "perfect") { eff.행복 = (eff.행복 || 0) + 12; dog.perfects = (dog.perfects || 0) + 1; }
@@ -510,11 +557,122 @@ async function runAntic() {
       Object.entries(c.fx).forEach(([k, v]) => { dog.stats[k] = clamp(dog.stats[k] + v); });
       box.innerHTML = "";
       say(c.r);
+      tempExpr = c.fx.행복 < 0 ? "cry" : "wink"; renderDog();
+      setTimeout(() => { tempExpr = null; if (!busy) renderDog(); }, 1800);
       questEvent("clean");
       saveState(state);
       render();
     });
   }
+}
+
+
+
+// ---------- 장소: 마당 ↔ 집 안 (집이나 문을 누르면 포탈처럼 이동) ----------
+function renderPlace() {
+  const scene = $("scene"), eq = state.equipped || {};
+  const place = state.dog && !state.dog.inHeaven ? (state.place || "yard") : "yard";
+  scene.dataset.place = place;
+  scene.classList.toggle("has-toy", !!eq.toy);
+  scene.classList.toggle("has-house", true);
+  const layer = $("scene-place");
+  if (layer.dataset.place !== place) {
+    layer.dataset.place = place;
+    layer.innerHTML = place === "home" ? HOME_ROOM + `<div class="room-floor-wrap">${HOME_FLOOR}</div>` : "";
+  }
+}
+function sparkleAt(xPct) {
+  const fx = document.createElement("div");
+  fx.className = "portal-fx";
+  fx.style.left = `${xPct}%`;
+  fx.innerHTML = Array.from({ length: 12 }, (_, i) => `<i style="--a:${i * 30}deg;--d:${(i % 3) * 0.08}s"></i>`).join("") + "<span>✨</span>";
+  $("scene").appendChild(fx);
+  setTimeout(() => fx.remove(), 1100);
+}
+async function goPlace(target) {
+  const dog = state.dog;
+  if (!dog || dog.inHeaven || busy || $("scene").dataset.anim || $("scene").dataset.bg) return;
+  if ((state.place || "yard") === target) return;
+  setBusy(true);
+  const scene = $("scene"), r = scene.getBoundingClientRect();
+  const half = $("dog-stage").getBoundingClientRect().width / 2;
+  const edge = r.width / 2 - half * 0.75;
+  // 1) 문(포탈) 쪽으로 걸어감
+  const toX = target === "home" ? edge : -edge;
+  say(target === "home" ? pick(["집에 들어가자!", "우리 집이다~"]) : pick(["밖에 나가자!", "마당으로 출발!"]));
+  moveDogTo(toX);
+  await sleep(Math.max(350, Math.abs(toX - dogX) / 170 * 1000) + 150);
+  // 2) 뒷모습으로 쏙 들어감 + 반짝
+  tempPose = null; tempView = "back"; scene.dataset.anim = "enter"; renderDog();
+  Sound.chime();
+  sparkleAt(target === "home" ? 82 : 14);
+  await sleep(650);
+  // 3) 장소 바뀜
+  state.place = target;
+  saveState(state);
+  scene.dataset.anim = "";
+  tempView = null;
+  renderDog();
+  const fromX = target === "home" ? -edge : edge;
+  moveDogTo(fromX, true);
+  sparkleAt(target === "home" ? 14 : 82);
+  scene.classList.add("place-fade");
+  await sleep(250);
+  scene.classList.remove("place-fade");
+  // 4) 새 장소 가운데로 걸어 나옴
+  moveDogTo(0);
+  await sleep(Math.abs(fromX) / 170 * 1000 + 150);
+  say(target === "home" ? pick(["집이 최고야~", "포근하다!", "내 방석 어디 있지?"]) : pick(["바깥 공기 좋다!", "킁킁, 풀 냄새!"]));
+  setBusy(false);
+}
+async function jump() {
+  if (busy) return;
+  setBusy(true);
+  Sound.boing && Sound.bark(stageOf(state.dog).id, 1);
+  say(pick(["점프!", "하늘까지 닿을 거야!", "폴짝!"]));
+  await playScene("hop", 800, "star");
+  setBusy(false);
+}
+
+// ---------- 화면을 톡 누르면 그쪽으로 걸어가요 ----------
+let dogX = 0, moveTimer = null;
+function moveDogTo(x, instant) {
+  const pos = $("dog-pos");
+  if (!pos) return;
+  const dist = Math.abs(x - dogX);
+  const dur = instant ? 0 : Math.max(0.35, dist / 170);
+  pos.style.transitionDuration = `${dur}s`;
+  pos.style.transform = `translateX(${x}px)`;
+  if (!instant && dist > 4) {
+    pos.classList.toggle("face-left", x < dogX);
+    clearTimeout(moveTimer);
+    tempPose = "side";
+    $("scene").dataset.anim = "move";
+    renderDog();
+    moveTimer = setTimeout(() => {
+      if ($("scene").dataset.anim === "move") $("scene").dataset.anim = "";
+      tempPose = null;
+      pos.classList.remove("face-left");
+      renderDog();
+    }, dur * 1000 + 60);
+  } else if (instant) {
+    pos.classList.remove("face-left");
+  }
+  dogX = x;
+}
+function onSceneTap(e) {
+  const scene = $("scene");
+  if (!state.dog || state.dog.inHeaven || busy || (scene.dataset.anim && scene.dataset.anim !== "move") || scene.dataset.bg) return;
+  if (e.target.closest("#scene-house") && (state.place || "yard") === "yard") { goPlace("home"); return; }
+  if (e.target.closest("#door") && state.place === "home") { goPlace("yard"); return; }
+  if (e.target.closest("#dog-stage, .mess, .event-card, .catch, button, .lonely")) return;
+  const r = scene.getBoundingClientRect();
+  if (e.clientY - r.top < r.height * 0.42) { jump(); return; }
+  const half = $("dog-stage").getBoundingClientRect().width / 2;
+  const limit = r.width / 2 - half * 0.75;
+  const x = Math.max(-limit, Math.min(limit, e.clientX - r.left - r.width / 2));
+  moveDogTo(x);
+  if (Math.random() < 0.35) say(pick(["여기? 여기!", "총총총~", "보호자가 부르면 어디든 가지!", "킁킁, 여기 뭐 있어?"]));
 }
 
 // ---------- 도파민 장치: 콤보, 황금 뼈다귀, 공 잡기, 업적 ----------
@@ -615,7 +773,7 @@ async function pet() {
   if (dog.lonelyNeed > 0) { await comfort(); setBusy(false); return; }
   dog.stats.행복 = clamp(dog.stats.행복 + (dog.counts.pet % 3 === 0 ? 0 : 2));
   say(pick(["헤헤, 거기 좋아!", "더 쓰다듬어 줘~", "보호자 손 따뜻해", "배도! 배도 해 줘!"]));
-  await playScene("pet", 1400, "love");
+  await playScene("pet", 1400, dog.counts.pet % 2 ? "love" : "shy");
   saveState(state);
   setBusy(false);
   badgeCheck();
@@ -645,7 +803,7 @@ async function trick(key) {
   if (Math.random() < chance) {
     Sound.bark(stageOf(dog).id, 1);
     say(learned ? `${t.label}! 이제 식은 죽 먹기야` : "이렇게 하는 거 맞아?");
-    await playScene(t.anim, 1500, "joy");
+    await playScene(t.anim, 1500, learned ? "proud" : "star");
     if (!learned) {
       dog.tricks[key] += 1;
       if (dog.tricks[key] >= t.need) {
@@ -657,7 +815,7 @@ async function trick(key) {
     }
   } else {
     say("음… 무슨 말이야?");
-    await playScene("fail", 1200, "surprised");
+    await playScene("fail", 1200, "dizzy");
   }
   saveState(state);
   setBusy(false);
@@ -758,7 +916,7 @@ async function talk(e) {
 
 function renderTalks() {
   const dog = state.dog;
-  $("talk-log").innerHTML = (dog?.talks || []).slice(0, 4).map((t) => `
+  $("talk-log").innerHTML = (dog?.talks || []).slice(0, 4).reverse().map((t) => `
     <li><p class="me">${escapeHtml(t.q)}</p><p class="pup">${escapeHtml(t.a)}</p></li>`).join("");
 }
 
@@ -889,7 +1047,7 @@ function earn(n, why) {
 
 // ---------- 상점 ----------
 let shopTab = "house";
-const TAB_LABEL = { house: "집", outfit: "옷", hat: "모자·소품" };
+const TAB_LABEL = { house: "집", outfit: "옷", hat: "모자·소품", toy: "장난감" };
 function openShop() {
   $("shop").hidden = false;
   renderShop();
@@ -902,10 +1060,10 @@ function renderShop() {
   $("shop-list").innerHTML = SHOP[shopTab].map((it) => {
     const owned = state.owned[shopTab].includes(it.id);
     const on = state.equipped[shopTab] === it.id;
-    const preview = shopTab === "house" ? houseSvg(it.id)
+    const preview = shopTab === "house" ? houseSvg(it.id) : shopTab === "toy" ? toySvg(it.id)
       : dogSvg(stage, dog.look, "happy", { [shopTab]: it.id });
-    const btn = on ? `<button type="button" class="btn small ghost" data-act="off" data-id="${it.id}">벗기기</button>`
-      : owned ? `<button type="button" class="btn small" data-act="on" data-id="${it.id}">${shopTab === "house" ? "놓기" : "입히기"}</button>`
+    const btn = on ? `<button type="button" class="btn small ghost" data-act="off" data-id="${it.id}">${shopTab === "house" || shopTab === "toy" ? "치우기" : "벗기기"}</button>`
+      : owned ? `<button type="button" class="btn small" data-act="on" data-id="${it.id}">${shopTab === "house" || shopTab === "toy" ? "놓기" : "입히기"}</button>`
       : `<button type="button" class="btn small" data-act="buy" data-id="${it.id}" ${state.coins < it.price ? "disabled" : ""}>🦴 ${it.price}</button>`;
     return `<li class="shop-item ${on ? "on" : ""}"><div class="shop-prev">${preview}</div><b>${it.name}</b>${btn}</li>`;
   }).join("");
@@ -973,6 +1131,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("pet-btn").addEventListener("click", pet);
   $("bark-btn").addEventListener("click", bark);
   $("dog-stage").addEventListener("click", pet);
+  $("scene").addEventListener("click", onSceneTap);
+  $("door").innerHTML = DOOR;
   $("event-close").addEventListener("click", closeEvent);
 
   $("talk-form").addEventListener("submit", talk);
@@ -987,6 +1147,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("pointerdown", () => Sound.whine(), { once: true });
   }
   setInterval(() => {
+    if (!idleOK() || tempExpr || tempPose || Math.random() < 0.4) return;
+    const m = moodOf(state.dog).expr;
+    tempExpr = m === "sad" ? pick(["pout", "cry", "look"]) : m === "hungry" ? pick(["hungry", "look", "pout"]) : pick(["blep", "wink", "look", "shy", "proud", "joy"]);
+    renderDog();
+    setTimeout(() => { tempExpr = null; if (idleOK()) renderDog(); }, 1700);
+  }, 5000);
+  setInterval(() => {
     if (!idleOK() || Date.now() < nextAntic) return;
     nextAntic = Date.now() + 16000 + Math.random() * 16000;
     runAntic();
@@ -996,9 +1163,11 @@ document.addEventListener("DOMContentLoaded", () => {
   saveState(state);
   setInterval(() => {
     if (!state.dog || state.dog.inHeaven || busy || $("scene").dataset.anim || $("shop").hidden === false) return;
-    tempPose = "side"; renderDog();
+    const v = pick(["side", "three", "three", "back"]);
+    if (v === "side") tempPose = "side"; else tempView = v;
+    renderDog();
     $("scene").dataset.idle = "turn";
-    setTimeout(() => { if (tempPose === "side" && !$("scene").dataset.anim) { tempPose = null; renderDog(); } $("scene").dataset.idle = ""; }, 2200);
+    setTimeout(() => { if ((tempPose === "side" || tempView) && !$("scene").dataset.anim) { tempPose = null; tempView = null; renderDog(); } $("scene").dataset.idle = ""; }, 2200);
   }, 13000);
   render();
   if (state.dog && !state.dog.inHeaven) say(state.dog.lonelyNeed > 0 ? `보호자… ${timeAgo(state.dog.lonelyHours || 1)}이나 기다렸어… 낑낑` : `${josa(state.dog.name, "이가")} 꼬리를 흔들어요`);

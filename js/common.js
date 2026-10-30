@@ -25,7 +25,7 @@ function blankDogFields(d) {
 }
 
 function loadState() {
-  let s = { dog: null, stars: [], sound: { on: true, volume: 0.6 }, coins: 20, owned: { house: [], outfit: [], hat: [] }, equipped: { house: null, outfit: null, hat: null } };
+  let s = { dog: null, stars: [], sound: { on: true, volume: 0.6 }, coins: 20, owned: { house: [], outfit: [], hat: [], toy: [] }, equipped: { house: null, outfit: null, hat: null, toy: null } };
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) s = Object.assign(s, JSON.parse(raw));
@@ -36,9 +36,10 @@ function loadState() {
   }
   if (typeof s.coins !== "number") s.coins = 20;
   s.endings = s.endings || [];
+  s.place = s.place || "yard";
   s.badges = s.badges || [];
-  s.owned = Object.assign({ house: [], outfit: [], hat: [] }, s.owned || {});
-  s.equipped = Object.assign({ house: null, outfit: null, hat: null }, s.equipped || {});
+  s.owned = Object.assign({ house: [], outfit: [], hat: [], toy: [] }, s.owned || {});
+  s.equipped = Object.assign({ house: null, outfit: null, hat: null, toy: null }, s.equipped || {});
   s.sound = s.sound || { on: true, volume: 0.6 };
   return s;
 }
@@ -83,23 +84,49 @@ const FACES = {
 const SHOP = {
   house: [
     { id: "wood", name: "나무 개집", price: 40 },
+    { id: "mushroom", name: "버섯 집", price: 70 },
     { id: "redroof", name: "빨간 지붕 집", price: 80 },
+    { id: "igloo", name: "이글루", price: 100 },
     { id: "tent", name: "줄무늬 텐트", price: 120 },
+    { id: "cloud", name: "구름 집", price: 170 },
     { id: "castle", name: "강아지 성", price: 220 },
   ],
   outfit: [
     { id: "bowtie", name: "나비넥타이", price: 25 },
     { id: "raincoat", name: "노란 우비", price: 50 },
+    { id: "hoodie", name: "분홍 후드티", price: 60 },
     { id: "sweater", name: "줄무늬 스웨터", price: 70 },
+    { id: "overall", name: "청 멜빵", price: 80 },
+    { id: "bee", name: "꿀벌 옷", price: 95 },
     { id: "cape", name: "영웅 망토", price: 110 },
   ],
   hat: [
     { id: "flower", name: "꽃 머리띠", price: 30 },
+    { id: "beanie", name: "털모자", price: 35 },
+    { id: "strawhat", name: "밀짚모자", price: 40 },
     { id: "party", name: "생일 고깔", price: 45 },
+    { id: "headphones", name: "헤드폰", price: 55 },
     { id: "shades", name: "선글라스", price: 60 },
     { id: "crown", name: "왕관", price: 150 },
   ],
+  toy: [
+    { id: "ball", name: "테니스공", price: 15 },
+    { id: "bone", name: "뼈다귀 장난감", price: 20 },
+    { id: "duck", name: "삑삑 오리", price: 25 },
+    { id: "teddy", name: "곰돌이 인형", price: 45 },
+  ],
 };
+
+function toySvg(id) {
+  switch (id) {
+    case "ball": return `<svg viewBox="0 0 60 60"><circle cx="30" cy="34" r="18" fill="#c7e85a" stroke="#9cbf35" stroke-width="2"/><path d="M14 28 q16 10 32 0 M14 40 q16 -10 32 0" stroke="#fff" stroke-width="3" fill="none"/></svg>`;
+    case "bone": return `<svg viewBox="0 0 80 60"><g fill="#fff" stroke="#d9cbb5" stroke-width="2"><rect x="18" y="30" width="44" height="12" rx="6"/><circle cx="16" cy="30" r="8"/><circle cx="16" cy="42" r="8"/><circle cx="64" cy="30" r="8"/><circle cx="64" cy="42" r="8"/></g></svg>`;
+    case "duck": return `<svg viewBox="0 0 60 60"><ellipse cx="28" cy="42" rx="18" ry="12" fill="#ffd84d"/><circle cx="38" cy="26" r="11" fill="#ffd84d"/><path d="M47 26 l10 3 l-10 4 z" fill="#ff9a3c"/><circle cx="40" cy="23" r="2" fill="#333"/></svg>`;
+    case "teddy": return `<svg viewBox="0 0 60 70"><circle cx="18" cy="14" r="7" fill="#b9825a"/><circle cx="42" cy="14" r="7" fill="#b9825a"/><circle cx="30" cy="24" r="15" fill="#c9926a"/><ellipse cx="30" cy="52" rx="17" ry="15" fill="#c9926a"/><ellipse cx="30" cy="28" rx="6" ry="4.5" fill="#f1d9c0"/><circle cx="24" cy="21" r="2" fill="#333"/><circle cx="36" cy="21" r="2" fill="#333"/><circle cx="30" cy="27" r="1.8" fill="#333"/><path d="M22 40 q8 6 16 0" stroke="#e0525f" stroke-width="4" fill="none"/></svg>`;
+    default: return "";
+  }
+}
+
 
 function shade(hex, amt) {
   const n = parseInt(hex.slice(1), 16);
@@ -131,7 +158,7 @@ const ENDINGS = [
 let __gid = 0;
 
 // 눈: 크고 촉촉한 눈, 반사광 2개
-function eyeSvg(expr, x, y, r, g) {
+function eyeSvg(expr, x, y, r, g, idx = 0) {
   const arc = (dy, up) => `<path d="M${x - r} ${y + dy} q${r} ${up ? -r * 1.25 : r * 1.05} ${2 * r} 0" stroke="${INK}" stroke-width="${Math.max(2.6, r * 0.32)}" fill="none" stroke-linecap="round"/>`;
   const dot = (k = 1, look = 0) =>
     `<ellipse cx="${x}" cy="${y + look}" rx="${r * 0.86 * k}" ry="${r * k}" fill="url(#ey${g})"/>` +
@@ -146,6 +173,12 @@ function eyeSvg(expr, x, y, r, g) {
     case "hungry": return dot(1.08, -2);
     case "sleepy": return dot(0.95, 1) + `<path d="M${x - r * 1.15} ${y - r * 0.35} q${r * 1.15} ${r * 0.45} ${r * 2.3} 0 v${-r * 1.1} h${-r * 2.3} z" fill="url(#hd${g})"/><path d="M${x - r * 1.05} ${y - r * 0.3} q${r * 1.05} ${r * 0.4} ${r * 2.1} 0" stroke="${INK}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
     case "sad": return dot(1.05, 1) + `<path d="M${x + r * 0.2} ${y + r * 1.2} q${-r * 0.45} ${r * 1.1} 0 ${r * 1.5} q${r * 0.45} ${-r * 0.4} 0 ${-r * 1.5}" fill="#8fd0ff"/>`;
+    case "cry": return dot(1.08, 1) + `<path d="M${x - r * 0.5} ${y + r * 0.9} q${-r * 0.2} ${r * 1.6} ${r * 0.3} ${r * 2.4} q${r * 0.5} ${-r * 0.8} ${r * 0.3} ${-r * 2.4} z" fill="#8fd0ff" opacity=".9"/>`;
+    case "wink": case "proud": return idx === 1 || expr === "proud" ? arc(2, true) : dot();
+    case "shy": return `<path d="M${x + (idx ? 1 : -1) * r * 0.8} ${y - r * 0.6} L${x - (idx ? 1 : -1) * r * 0.6} ${y} L${x + (idx ? 1 : -1) * r * 0.8} ${y + r * 0.6}" stroke="${INK}" stroke-width="${Math.max(2.6, r * 0.3)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case "star": return dot(1.12) + `<path transform="translate(${x} ${y}) scale(${r / 10})" d="M0 -7 L2 -2 L7 -2 L3 1.5 L4.5 7 L0 3.8 L-4.5 7 L-3 1.5 L-7 -2 L-2 -2 z" fill="#fff6a8"/>`;
+    case "dizzy": return `<path d="M${x} ${y} m${-r * 0.2} 0 a${r * 0.2} ${r * 0.2} 0 1 1 ${r * 0.4} 0 a${r * 0.45} ${r * 0.45} 0 1 1 ${-r * 0.9} 0 a${r * 0.7} ${r * 0.7} 0 1 1 ${r * 1.4} 0" stroke="${INK}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    case "look": return `<ellipse cx="${x}" cy="${y}" rx="${r * 0.9}" ry="${r * 1.02}" fill="#fff" opacity=".95"/><ellipse cx="${x + r * 0.35}" cy="${y + r * 0.05}" rx="${r * 0.62}" ry="${r * 0.78}" fill="url(#ey${g})"/><circle cx="${x + r * 0.5}" cy="${y - r * 0.3}" r="${r * 0.22}" fill="#fff"/>`;
     default: return dot();
   }
 }
@@ -164,6 +197,12 @@ function mouthSvg(expr, cx, y, s) {
         (expr === "hungry" ? `<path d="M${cx + 6 * k} ${y + 4 * k} q${3 * k} ${9 * k} 0 ${12 * k} q${-3 * k} ${-4 * k} 0 ${-12 * k}" fill="#bfe7ff"/>` : "");
     case "sleepy": case "sleep": return line(`M${cx - 4 * k} ${y + 3 * k} q${4 * k} ${3 * k} ${8 * k} 0`);
     case "eat": return line(`M${cx - 9 * k} ${y} q${4.5 * k} ${5.5 * k} ${9 * k} 0 q${4.5 * k} ${5.5 * k} ${9 * k} 0`);
+    case "blep": case "look": return line(`M${cx - 8 * k} ${y} q${4 * k} ${5 * k} ${8 * k} 0 q${4 * k} ${5 * k} ${8 * k} 0`) + `<path d="M${cx + 0.5 * k} ${y + 3 * k} q${1 * k} ${10 * k} ${5 * k} ${9 * k} q${3 * k} ${-1 * k} ${1 * k} ${-9 * k} z" fill="#ff8fa6" stroke="#e86d89" stroke-width="1"/>`;
+    case "pout": return line(`M${cx - 4 * k} ${y + 2 * k} q${3 * k} ${-3 * k} ${4 * k} ${1.5 * k} q${1 * k} ${-4.5 * k} ${4 * k} ${-1.5 * k}`, 2.4);
+    case "wink": case "star": case "proud": return `<path d="M${cx - 9 * k} ${y} q${9 * k} ${13 * k} ${18 * k} 0 z" fill="#8a3b44"/><path d="M${cx - 4.5 * k} ${y + 4 * k} q${4.5 * k} ${9 * k} ${9 * k} 0" fill="#ff8fa6"/>`;
+    case "shy": return line(`M${cx - 6 * k} ${y + 1 * k} q${3 * k} ${3.5 * k} ${6 * k} 0 q${3 * k} ${3.5 * k} ${6 * k} 0`, 2.4);
+    case "dizzy": return line(`M${cx - 8 * k} ${y + 4 * k} q${2 * k} ${-4 * k} ${4 * k} 0 q${2 * k} ${4 * k} ${4 * k} 0 q${2 * k} ${-4 * k} ${4 * k} 0 q${2 * k} ${4 * k} ${4 * k} 0`, 2.2);
+    case "cry": return `<path d="M${cx - 8 * k} ${y + 7 * k} q${8 * k} ${-10 * k} ${16 * k} 0 q${-8 * k} ${3 * k} ${-16 * k} 0 z" fill="#8a3b44"/>`;
     default: return line(`M${cx - 9 * k} ${y} q${4.5 * k} ${5.5 * k} ${9 * k} 0 q${4.5 * k} ${5.5 * k} ${9 * k} 0`) + `<path d="M${cx - 2.6 * k} ${y + 3 * k} q${2.6 * k} ${7 * k} ${5.2 * k} 0" fill="#ff8fa6"/>`;
   }
 }
@@ -176,6 +215,9 @@ const GARMENT = {
   sweater: { base: "#ffffff", trim: "#d94757", line: "#e26b78" },
   vest: { base: "#8fa7d9", trim: "#6f88bf", line: "#ffffff" },
   cape: { base: "#d93a4a", trim: "#a82735", line: "#a82735" },
+  hoodie: { base: "#ffb3c8", trim: "#f28aa8", line: "#e86d91" },
+  bee: { base: "#ffd43b", trim: "#2f2a26", line: "#2f2a26" },
+  overall: { base: "#5b8bd6", trim: "#3f6fbe", line: "#ffd34d" },
   angel: { base: "rgba(255,255,255,.5)", trim: "rgba(255,255,255,.7)", line: "rgba(255,255,255,0)" },
 };
 function outfitBody(id, x, y, w, h, g, side) {
@@ -190,6 +232,13 @@ function outfitBody(id, x, y, w, h, g, side) {
   let deco = "";
   if (id === "sweater") deco = `<clipPath id="gc${g}"><path d="${hem}"/></clipPath><g clip-path="url(#gc${g})">${Array.from({ length: 9 }, (_, i) => `<rect x="${x}" y="${y + 8 + i * 13}" width="${w}" height="6" fill="#ef5f6e"/>`).join("")}</g>`;
   if (id === "vest") deco = `<clipPath id="gc${g}"><path d="${hem}"/></clipPath><g clip-path="url(#gc${g})">${Array.from({ length: 8 }, (_, i) => `<path d="M${x} ${y + 10 + i * 11} h${w}" stroke="#fff" stroke-width="2" stroke-dasharray="4 5" opacity=".6"/>`).join("")}</g>`;
+  if (id === "bee") deco = Array.from({ length: 6 }, (_, i) => `<rect x="${x0 - 20}" y="${top + 14 + i * 22}" width="${w + 40}" height="10" fill="#2f2a26"/>`).join("");
+  if (id === "hoodie") deco = side
+    ? `<path d="M${chestX - 30} ${top + (hemY - top) * 0.55} h40 v${(hemY - top) * 0.3} h-40 z" fill="#f28aa8" opacity=".8"/>`
+    : `<path d="M${chestX - 18} ${top + (hemY - top) * 0.5} h36 l6 ${(hemY - top) * 0.35} h-48 z" fill="#f28aa8" opacity=".85"/><path d="M${chestX - 7} ${top + 6} v18 M${chestX + 7} ${top + 6} v18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`;
+  if (id === "overall") deco = side
+    ? `<path d="M${chestX - 10} ${top - 10} L${chestX - 30} ${top + (hemY - top) * 0.4}" stroke="#3f6fbe" stroke-width="7"/><circle cx="${chestX - 28}" cy="${top + (hemY - top) * 0.4}" r="3.5" fill="#ffd34d"/>`
+    : `<path d="M${chestX - 18} ${top - 10} V${top + (hemY - top) * 0.45} M${chestX + 18} ${top - 10} V${top + (hemY - top) * 0.45}" stroke="#3f6fbe" stroke-width="7"/><circle cx="${chestX - 18}" cy="${top + (hemY - top) * 0.45}" r="3.5" fill="#ffd34d"/><circle cx="${chestX + 18}" cy="${top + (hemY - top) * 0.45}" r="3.5" fill="#ffd34d"/><rect x="${chestX - 12}" y="${top + (hemY - top) * 0.55}" width="24" height="16" rx="3" fill="#3f6fbe"/>`;
   if (id === "raincoat") deco = side
     ? `<path d="M${x + w * 0.72} ${y} V${y + h * 0.9}" stroke="${c.line}" stroke-width="2"/><circle cx="${x + w * 0.76}" cy="${y + h * 0.35}" r="2.6" fill="${c.line}"/><circle cx="${x + w * 0.76}" cy="${y + h * 0.6}" r="2.6" fill="${c.line}"/>`
     : `<path d="M${x + w / 2} ${y} V${y + h * 0.98}" stroke="${c.line}" stroke-width="2"/><circle cx="${x + w / 2 + 7}" cy="${y + h * 0.3}" r="3" fill="${c.line}"/><circle cx="${x + w / 2 + 7}" cy="${y + h * 0.55}" r="3" fill="${c.line}"/>`;
@@ -208,12 +257,19 @@ function garmentFit(id, torsoD, x0, x1, top, hemY, g, side, chestX, collarX) {
     ? `M${x0 - 40} ${hemY - 8} C${x0 + w * 0.3} ${hemY + dip}, ${x0 + w * 0.7} ${hemY + dip}, ${x1 + 40} ${hemY - 14}`
     : `M${x0 - 40} ${hemY} C${x0 + w * 0.25} ${hemY + dip}, ${x0 + w * 0.75} ${hemY + dip}, ${x1 + 40} ${hemY}`;
   const region = collarX
-    ? `M${x0 - 40} ${hemY - 8} C${x0 + w * 0.3} ${hemY + dip}, ${x0 + w * 0.6} ${hemY + dip}, ${collarX + 6} ${hemY - 4} L${collarX - 10} ${top - 10} V${top - 90} H${x0 - 40} z`
+    ? `M${x0 - 40} ${hemY - 8} C${x0 + w * 0.3} ${hemY + dip}, ${x0 + w * 0.6} ${hemY + dip}, ${collarX + 6} ${hemY - 4} Q${collarX + 22} ${(hemY + top) / 2} ${collarX - 12} ${top - 10} V${top - 90} H${x0 - 40} z`
     : `${hemD} V${top - 90} H${x0 - 40} z`;
-  const collar = collarX ? `<path d="M${collarX + 6} ${hemY - 4} L${collarX - 10} ${top - 10}" stroke="${c.trim}" stroke-width="5" stroke-linecap="round" clip-path="url(#gt${g})"/>` : "";
+  const collar = collarX ? `<path d="M${collarX + 6} ${hemY - 4} Q${collarX + 22} ${(hemY + top) / 2} ${collarX - 12} ${top - 10}" stroke="${c.trim}" stroke-width="5" fill="none" stroke-linecap="round" clip-path="url(#gt${g})"/>` : "";
   let deco = "";
   if (id === "sweater") deco = Array.from({ length: 12 }, (_, i) => `<rect x="${x0 - 20}" y="${top + 4 + i * 12}" width="${w + 40}" height="6" fill="#ef5f6e"/>`).join("");
   if (id === "vest") deco = Array.from({ length: 10 }, (_, i) => `<path d="M${x0 - 20} ${top + 8 + i * 10} h${w + 40}" stroke="#fff" stroke-width="2" stroke-dasharray="4 5" opacity=".6"/>`).join("");
+  if (id === "bee") deco = Array.from({ length: 6 }, (_, i) => `<rect x="${x0 - 20}" y="${top + 14 + i * 22}" width="${w + 40}" height="10" fill="#2f2a26"/>`).join("");
+  if (id === "hoodie") deco = side
+    ? `<path d="M${chestX - 30} ${top + (hemY - top) * 0.55} h40 v${(hemY - top) * 0.3} h-40 z" fill="#f28aa8" opacity=".8"/>`
+    : `<path d="M${chestX - 18} ${top + (hemY - top) * 0.5} h36 l6 ${(hemY - top) * 0.35} h-48 z" fill="#f28aa8" opacity=".85"/><path d="M${chestX - 7} ${top + 6} v18 M${chestX + 7} ${top + 6} v18" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`;
+  if (id === "overall") deco = side
+    ? `<path d="M${chestX - 10} ${top - 10} L${chestX - 30} ${top + (hemY - top) * 0.4}" stroke="#3f6fbe" stroke-width="7"/><circle cx="${chestX - 28}" cy="${top + (hemY - top) * 0.4}" r="3.5" fill="#ffd34d"/>`
+    : `<path d="M${chestX - 18} ${top - 10} V${top + (hemY - top) * 0.45} M${chestX + 18} ${top - 10} V${top + (hemY - top) * 0.45}" stroke="#3f6fbe" stroke-width="7"/><circle cx="${chestX - 18}" cy="${top + (hemY - top) * 0.45}" r="3.5" fill="#ffd34d"/><circle cx="${chestX + 18}" cy="${top + (hemY - top) * 0.45}" r="3.5" fill="#ffd34d"/><rect x="${chestX - 12}" y="${top + (hemY - top) * 0.55}" width="24" height="16" rx="3" fill="#3f6fbe"/>`;
   if (id === "raincoat") deco = `<path d="M${chestX} ${top - 20} V${hemY + dip}" stroke="${c.line}" stroke-width="2.2"/>` + [0.38, 0.62].map((t) => `<circle cx="${chestX + (side ? -6 : 7)}" cy="${top + (hemY - top) * t}" r="2.8" fill="${c.line}"/>`).join("");
   return `<defs>
       <clipPath id="gh${g}"><path d="${region}"/></clipPath>
@@ -250,6 +306,11 @@ function hatAt(id, x, top, w, eyeX, eyeY, eyeR, side) {
       return `<g transform="translate(${fx} ${fy})">${[0, 72, 144, 216, 288].map((a) => `<circle cx="${(Math.cos(a * Math.PI / 180) * 5.5).toFixed(1)}" cy="${(Math.sin(a * Math.PI / 180) * 5.5).toFixed(1)}" r="4.6" fill="${col}"/>`).join("")}<circle r="3.2" fill="#ffd34d"/></g>`;
     }).join("");
     case "party": return `<path d="M${x - 17} ${top + 8} L${x + 3} ${top - 40} L${x + 20} ${top + 6} z" fill="#7fb7e8" stroke="#5a96cf" stroke-width="1.5"/><circle cx="${x - 1}" cy="${top - 10}" r="3" fill="#fff"/><circle cx="${x + 8}" cy="${top}" r="3" fill="#ffe48f"/><circle cx="${x + 3}" cy="${top - 42}" r="6.5" fill="#ff9aa8"/>`;
+    case "strawhat": return `<ellipse cx="${x}" cy="${top + 6}" rx="${w * 0.95}" ry="${w * 0.2}" fill="#f2d28b" stroke="#d9b45e" stroke-width="2"/><path d="M${x - w * 0.5} ${top + 4} Q${x - w * 0.48} ${top - w * 0.42} ${x} ${top - w * 0.44} Q${x + w * 0.48} ${top - w * 0.42} ${x + w * 0.5} ${top + 4} z" fill="#f5dc9e" stroke="#d9b45e" stroke-width="2"/><path d="M${x - w * 0.5} ${top - 4} Q${x} ${top + 2} ${x + w * 0.5} ${top - 4}" stroke="#e0525f" stroke-width="6" fill="none"/>`;
+    case "beanie": return `<path d="M${x - w * 0.62} ${top + 10} Q${x - w * 0.6} ${top - w * 0.55} ${x} ${top - w * 0.58} Q${x + w * 0.6} ${top - w * 0.55} ${x + w * 0.62} ${top + 10} z" fill="#7fb7e8"/><rect x="${x - w * 0.66}" y="${top + 2}" width="${w * 1.32}" height="12" rx="6" fill="#5a96cf"/><circle cx="${x}" cy="${top - w * 0.6}" r="8" fill="#fff"/>`;
+    case "headphones": return side
+      ? `<path d="M${x - w * 0.55} ${top + 14} Q${x - w * 0.1} ${top - w * 0.35} ${x + w * 0.4} ${top + 4}" stroke="#2f3b52" stroke-width="6" fill="none"/><rect x="${x - w * 0.72}" y="${top + 12}" width="16" height="24" rx="7" fill="#ff7aa8"/>`
+      : `<path d="M${x - w * 0.9} ${top + w * 0.7} Q${x} ${top - w * 0.5} ${x + w * 0.9} ${top + w * 0.7}" stroke="#2f3b52" stroke-width="6" fill="none"/><rect x="${x - w * 1.02}" y="${top + w * 0.62}" width="16" height="26" rx="7" fill="#ff7aa8"/><rect x="${x + w * 1.02 - 16}" y="${top + w * 0.62}" width="16" height="26" rx="7" fill="#ff7aa8"/>`;
     case "crown": return `<path d="M${x - 24} ${top + 8} l0 -24 l12 13 l12 -21 l12 21 l12 -13 l0 24 z" fill="#ffd34d" stroke="#d9a400" stroke-width="2" stroke-linejoin="round"/><circle cx="${x}" cy="${top - 4}" r="3.8" fill="#e0525f"/>`;
     case "shades": return side
       ? `<rect x="${eyeX - eyeR * 1.4}" y="${eyeY - eyeR * 1.1}" width="${eyeR * 2.8}" height="${eyeR * 2}" rx="${eyeR * 0.8}" fill="#22283a"/>`
@@ -307,6 +368,9 @@ function dogFront(st, look, expr, opts) {
   const eyeY = H + hy * 0.1, ex = hx * 0.4, eR = b.eye * 1.18;
   const snY = H + hy * 0.46;
   const tub = opts.prop === "tub";
+  const back = opts.view === "back", tv = opts.view === "three" ? 1 : 0;
+  const shiftE = tv * hx * 0.27, snX = cx + tv * hx * 0.44;
+  const eL = cx - ex + shiftE + tv * ex * 0.3, eRx = cx + ex + shiftE;
   const footY = GROUND - 6;
   const by = b.bodyY, bx = b.brx, bry = b.bry;
 
@@ -319,9 +383,9 @@ function dogFront(st, look, expr, opts) {
   const haunch = (d) => `<ellipse cx="${cx + d * bx * 0.74}" cy="${by + bry * 0.45}" rx="${bx * 0.46}" ry="${bry * 0.52}"/><ellipse cx="${cx + d * bx * 0.86}" cy="${footY - 2}" rx="${b.legW * 0.75}" ry="${b.legW * 0.4}"/>`;
   // 머리: 볼이 통통한 모양
   const head = `<ellipse cx="${cx}" cy="${H - hy * 0.05}" rx="${hx * 0.92}" ry="${hy * 0.95}"/>
-    <ellipse cx="${cx - hx * 0.5}" cy="${H + hy * 0.32}" rx="${hx * 0.55}" ry="${hy * 0.5}"/>
-    <ellipse cx="${cx + hx * 0.5}" cy="${H + hy * 0.32}" rx="${hx * 0.55}" ry="${hy * 0.5}"/>
-    <ellipse cx="${cx}" cy="${snY}" rx="${b.snR * 1.0}" ry="${b.snR * 0.72}"/>`;
+    <ellipse cx="${cx - hx * 0.5 + tv * hx * 0.1}" cy="${H + hy * 0.32}" rx="${hx * (0.55 - tv * 0.12)}" ry="${hy * 0.5}"/>
+    <ellipse cx="${cx + hx * 0.5 + tv * hx * 0.05}" cy="${H + hy * 0.32}" rx="${hx * 0.55}" ry="${hy * 0.5}"/>
+    ${back ? "" : `<ellipse cx="${snX}" cy="${snY}" rx="${b.snR * (1.0 + tv * 0.15)}" ry="${b.snR * 0.72}"/>`}`;
   const tx = cx + bx * 0.8, ty = by + bry * 0.1;
   const tailPath = face === "pointy"
     ? `<circle cx="${tx + 14}" cy="${ty - 20}" r="${st === "baby" ? 11 : 14}"/><circle cx="${tx + 14}" cy="${ty - 20}" r="${st === "baby" ? 4 : 5}" fill="${belly}"/>`
@@ -333,25 +397,25 @@ function dogFront(st, look, expr, opts) {
   if (face === "pointy") {
     const eh = hy * (st === "baby" ? 0.66 : 0.82), ew = hx * 0.55;
     ears = [-1, 1].map((d) => {
-      const ex0 = cx + d * hx * 0.5, ey0 = H - hy * 0.6;
-      return `<g transform="rotate(${d * (12 + earDown)} ${ex0} ${ey0})"><path d="M${ex0 - ew / 2} ${ey0 + 8} C${ex0 - ew * 0.3} ${ey0 - eh * 0.6}, ${ex0 + d * 2} ${ey0 - eh * 1.1}, ${ex0 + d * 3} ${ey0 - eh * 1.05} C${ex0 + ew * 0.3} ${ey0 - eh * 0.6}, ${ex0 + ew / 2} ${ey0 - 2}, ${ex0 + ew / 2} ${ey0 + 8} z" fill="${earCol}"/><path d="M${ex0 - ew / 4} ${ey0 + 3} C${ex0 - ew * 0.15} ${ey0 - eh * 0.45}, ${ex0 + d * 2} ${ey0 - eh * 0.75}, ${ex0 + d * 2} ${ey0 - eh * 0.72} C${ex0 + ew * 0.15} ${ey0 - eh * 0.45}, ${ex0 + ew / 4} ${ey0}, ${ex0 + ew / 4} ${ey0 + 3} z" fill="#f2a9b9" opacity=".9"/></g>`;
+      const ex0 = cx + d * hx * 0.5 + tv * hx * (d < 0 ? 0.14 : 0.08), ey0 = H - hy * 0.6;
+      return `<g transform="rotate(${d * (12 + earDown)} ${ex0} ${ey0})"><path d="M${ex0 - ew / 2} ${ey0 + 8} C${ex0 - ew * 0.3} ${ey0 - eh * 0.6}, ${ex0 + d * 2} ${ey0 - eh * 1.1}, ${ex0 + d * 3} ${ey0 - eh * 1.05} C${ex0 + ew * 0.3} ${ey0 - eh * 0.6}, ${ex0 + ew / 2} ${ey0 - 2}, ${ex0 + ew / 2} ${ey0 + 8} z" fill="${earCol}"/>${back ? "" : `<path d="M${ex0 - ew / 4} ${ey0 + 3} C${ex0 - ew * 0.15} ${ey0 - eh * 0.45}, ${ex0 + d * 2} ${ey0 - eh * 0.75}, ${ex0 + d * 2} ${ey0 - eh * 0.72} C${ex0 + ew * 0.15} ${ey0 - eh * 0.45}, ${ex0 + ew / 4} ${ey0}, ${ex0 + ew / 4} ${ey0 + 3} z" fill="#f2a9b9" opacity=".9"/>`}</g>`;
     }).join("");
   } else if (face !== "fluffy") {
     const len = face === "floppy" ? 1.25 : 1.0;
     ears = [-1, 1].map((d) => {
-      const ax = cx + d * hx * 0.72, ay = H - hy * 0.62;
+      const ax = cx + d * hx * 0.72 + (tv && d < 0 ? hx * 0.12 : 0) + tv * hx * 0.06, ay = H - hy * 0.62;
       return `<path transform="rotate(${d * -(4 + earDown)} ${ax} ${ay})" d="M${ax - d * 6} ${ay - 4} C${ax + d * hx * 0.38} ${ay - 12}, ${ax + d * hx * 0.62} ${ay + hy * 0.4 * len}, ${ax + d * hx * 0.5} ${ay + hy * 1.05 * len} C${ax + d * hx * 0.42} ${ay + hy * 1.28 * len}, ${ax + d * hx * 0.05} ${ay + hy * 1.25 * len}, ${ax - d * hx * 0.02} ${ay + hy * 0.95 * len} C${ax - d * hx * 0.1} ${ay + hy * 0.5}, ${ax - d * hx * 0.15} ${ay + hy * 0.1}, ${ax - d * 6} ${ay - 4} z" fill="${earCol}"/>`;
     }).join("");
   }
 
   // 밝은 무늬 — 부드러운 경계
-  const bodyPatches = `<ellipse cx="${cx}" cy="${by - bry * 0.05}" rx="${bx * 0.42}" ry="${bry * 0.75}" fill="${belly}"/>` +
+  const bodyPatches = (back ? "" : `<ellipse cx="${cx}" cy="${by - bry * 0.05}" rx="${bx * 0.42}" ry="${bry * 0.75}" fill="${belly}"/>`) +
 
     (face === "patch" && !opts.outfit ? `<ellipse cx="${cx - bx * 0.55}" cy="${by + 8}" rx="${bry * 0.32}" ry="${bry * 0.28}" fill="${shade(earCol, -0.08)}"/>` : "");
-  let headPatches = `<ellipse cx="${cx}" cy="${snY + 1}" rx="${b.snR * 0.95}" ry="${b.snR * 0.68}" fill="${senior ? "#f1eee9" : belly}"/>`;
-  if (face === "floppy") headPatches += `<path d="M${cx - 6} ${H - hy * 0.92} C${cx - 3} ${H - hy * 0.98}, ${cx + 3} ${H - hy * 0.98}, ${cx + 6} ${H - hy * 0.92} L${cx + 13} ${snY - b.snR * 0.4} H${cx - 13} z" fill="${belly}"/>`;
-  if (face === "pointy") headPatches += `<ellipse cx="${cx - hx * 0.42}" cy="${H + hy * 0.42}" rx="${hx * 0.4}" ry="${hy * 0.34}" fill="${belly}"/><ellipse cx="${cx + hx * 0.42}" cy="${H + hy * 0.42}" rx="${hx * 0.4}" ry="${hy * 0.34}" fill="${belly}"/><ellipse cx="${cx - ex}" cy="${eyeY - b.eye * 1.9}" rx="${b.eye * 0.62}" ry="${b.eye * 0.4}" fill="${belly}"/><ellipse cx="${cx + ex}" cy="${eyeY - b.eye * 1.9}" rx="${b.eye * 0.62}" ry="${b.eye * 0.4}" fill="${belly}"/>`;
-  if (face === "patch") headPatches += `<ellipse cx="${cx + ex + 2}" cy="${eyeY - 1}" rx="${b.eye * 2.1}" ry="${b.eye * 1.9}" fill="${shade(earCol, -0.1)}"/>`;
+  let headPatches = back ? "" : `<ellipse cx="${snX}" cy="${snY + 1}" rx="${b.snR * 0.95}" ry="${b.snR * 0.68}" fill="${senior ? "#f1eee9" : belly}"/>`;
+  if (face === "floppy" && !back) headPatches += `<path d="M${cx - 6} ${H - hy * 0.92} C${cx - 3} ${H - hy * 0.98}, ${cx + 3} ${H - hy * 0.98}, ${cx + 6} ${H - hy * 0.92} L${cx + 13} ${snY - b.snR * 0.4} H${cx - 13} z" fill="${belly}"/>`;
+  if (face === "pointy" && !back) headPatches += `<ellipse cx="${cx - hx * 0.42}" cy="${H + hy * 0.42}" rx="${hx * 0.4}" ry="${hy * 0.34}" fill="${belly}"/><ellipse cx="${cx + hx * 0.42}" cy="${H + hy * 0.42}" rx="${hx * 0.4}" ry="${hy * 0.34}" fill="${belly}"/><ellipse cx="${cx - ex}" cy="${eyeY - b.eye * 1.9}" rx="${b.eye * 0.62}" ry="${b.eye * 0.4}" fill="${belly}"/><ellipse cx="${cx + ex}" cy="${eyeY - b.eye * 1.9}" rx="${b.eye * 0.62}" ry="${b.eye * 0.4}" fill="${belly}"/>`;
+  if (face === "patch" && !back) headPatches += `<ellipse cx="${eRx + 2}" cy="${eyeY - 1}" rx="${b.eye * 2.1}" ry="${b.eye * 1.9}" fill="${shade(earCol, -0.1)}"/>`;
   const headFluff = face === "fluffy" ? [-1, -0.6, -0.2, 0.2, 0.6, 1].map((t) => `<circle cx="${cx + Math.sin(t) * hx * 0.9}" cy="${H - Math.cos(t) * hy * 0.85}" r="${hx * 0.32}"/>`).join("") + `<circle cx="${cx - hx * 0.95}" cy="${H + hy * 0.2}" r="${hx * 0.38}"/><circle cx="${cx + hx * 0.95}" cy="${H + hy * 0.2}" r="${hx * 0.38}"/>` : "";
   const bodyFluff = face === "fluffy" ? `<circle cx="${cx - bx * 0.7}" cy="${by - bry * 0.2}" r="${bx * 0.3}"/><circle cx="${cx + bx * 0.7}" cy="${by - bry * 0.2}" r="${bx * 0.3}"/>` : "";
 
@@ -368,6 +432,7 @@ function dogFront(st, look, expr, opts) {
   const clip = `<clipPath id="cb${g}"><path d="${mass}"/></clipPath><clipPath id="cm${g}"><path d="${mass}"/>${haunch(-1)}${haunch(1)}<path d="${legPath(cx - 17)}"/><path d="${legPath(cx + 17)}"/></clipPath>`;
   let wear = "", wearBehind = "", neck = "";
   if (tub) opts = Object.assign({}, opts, { outfit: null });
+  if (opts.outfit === "bee") wearBehind = `<g fill="rgba(220,240,255,.85)" stroke="#a9c8e8" stroke-width="2"><ellipse cx="${cx - bx * 0.95}" cy="${by - bry * 0.9}" rx="${bx * 0.45}" ry="${bry * 0.32}" transform="rotate(-25 ${cx - bx * 0.95} ${by - bry * 0.9})"/><ellipse cx="${cx + bx * 0.95}" cy="${by - bry * 0.9}" rx="${bx * 0.45}" ry="${bry * 0.32}" transform="rotate(25 ${cx + bx * 0.95} ${by - bry * 0.9})"/></g>`;
   if (opts.outfit === "cape") wearBehind = `<path d="M${cx - bx * 0.55} ${by - bry * 0.92} C${cx - bx * 1.25} ${by - bry * 0.4}, ${cx - bx * 1.45} ${by + bry * 0.5}, ${cx - bx * 1.3} ${GROUND - 4} Q${cx - bx * 1.05} ${GROUND - 14} ${cx - bx * 0.8} ${GROUND - 4} H${cx + bx * 0.8} Q${cx + bx * 1.05} ${GROUND - 14} ${cx + bx * 1.3} ${GROUND - 4} C${cx + bx * 1.45} ${by + bry * 0.5}, ${cx + bx * 1.25} ${by - bry * 0.4}, ${cx + bx * 0.55} ${by - bry * 0.92} z" fill="#d93a4a"/><path d="M${cx - bx * 1.2} ${by} C${cx - bx * 1.32} ${by + bry * 0.6}, ${cx - bx * 1.3} ${by + bry}, ${cx - bx * 1.25} ${GROUND - 8}" stroke="#a82735" stroke-width="3" fill="none" opacity=".6"/><path d="M${cx + bx * 1.2} ${by} C${cx + bx * 1.32} ${by + bry * 0.6}, ${cx + bx * 1.3} ${by + bry}, ${cx + bx * 1.25} ${GROUND - 8}" stroke="#a82735" stroke-width="3" fill="none" opacity=".6"/>`;
   const garmentId = opts.outfit && opts.outfit !== "bowtie" && opts.outfit !== "cape" ? opts.outfit : (!opts.outfit && senior ? (heaven ? "angel" : "vest") : null);
   if (garmentId) wear = garmentFit(garmentId, mass, cx - bx * 1.1, cx + bx * 1.1, by - bry * 1.0, by + bry * 0.18, g, false, cx);
@@ -381,7 +446,7 @@ function dogFront(st, look, expr, opts) {
   const brows = senior
     ? `<path d="M${cx - ex - 10} ${eyeY - b.eye * 1.6} q10 -7 20 0 M${cx + ex - 10} ${eyeY - b.eye * 1.6} q10 -7 20 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".9"/>`
     : expr === "sad" ? `<path d="M${cx - ex - 8} ${eyeY - b.eye * 1.5} l13 -5 M${cx + ex + 8} ${eyeY - b.eye * 1.5} l-13 -5" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>` : "";
-  const blushOp = expr === "love" || expr === "joy" ? 0.8 : 0.45;
+  const blushOp = ["love", "joy", "shy", "proud", "star"].includes(expr) ? 0.85 : 0.45;
   const blush = ["sad", "sleepy"].includes(expr) ? "" : `<g filter="url(#sf2${g})"><ellipse cx="${cx - hx * 0.6}" cy="${H + hy * 0.38}" rx="${hx * 0.17}" ry="${hy * 0.1}" fill="#ff8fab" opacity="${blushOp}"/><ellipse cx="${cx + hx * 0.6}" cy="${H + hy * 0.38}" rx="${hx * 0.17}" ry="${hy * 0.1}" fill="#ff8fab" opacity="${blushOp}"/></g>`;
   const halo = heaven ? `<ellipse cx="${cx}" cy="${H - hy - 14}" rx="${hx * 0.62}" ry="8" fill="none" stroke="#ffe48f" stroke-width="6"/>
     <path d="M${cx - bx * 0.8} ${by - 10} q-46 -24 -26 -62 q22 24 46 30 z" fill="#fff" opacity=".95"/><path d="M${cx + bx * 0.8} ${by - 10} q46 -24 26 -62 q-22 24 -46 30 z" fill="#fff" opacity=".95"/>` : "";
@@ -389,10 +454,10 @@ function dogFront(st, look, expr, opts) {
 
   const tw = Math.max(bx * 1.75, 92), tubTop = by - bry * 0.42;
   const tubSvg = tub ? `<g class="svg-tub">
-      <path d="M${cx - tw} ${tubTop} H${cx + tw} Q${cx + tw * 0.98} ${GROUND - 12} ${cx + tw * 0.72} ${GROUND - 8} H${cx - tw * 0.72} Q${cx - tw * 0.98} ${GROUND - 12} ${cx - tw} ${tubTop} z" fill="url(#tb${g})" stroke="#b9cbe0" stroke-width="2.5"/>
+      <path d="M${cx - tw} ${tubTop} H${cx + tw} Q${cx + tw * 0.98} ${GROUND - 4} ${cx + tw * 0.72} ${GROUND + 1} H${cx - tw * 0.72} Q${cx - tw * 0.98} ${GROUND - 4} ${cx - tw} ${tubTop} z" fill="url(#tb${g})" stroke="#b9cbe0" stroke-width="2.5"/>
       <path d="M${cx - tw * 0.8} ${tubTop + 14} Q${cx - tw * 0.82} ${GROUND - 26} ${cx - tw * 0.6} ${GROUND - 20}" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" opacity=".8"/>
       <rect x="${cx - tw - 8}" y="${tubTop - 8}" width="${tw * 2 + 16}" height="15" rx="7.5" fill="#fff" stroke="#b9cbe0" stroke-width="2.5"/>
-      <path d="M${cx - tw * 0.62} ${GROUND - 8} l-8 12 M${cx + tw * 0.62} ${GROUND - 8} l8 12" stroke="#e0b44b" stroke-width="7" stroke-linecap="round"/>
+      <path d="M${cx - tw * 0.62} ${GROUND} l-7 8 M${cx + tw * 0.62} ${GROUND} l7 8" stroke="#e0b44b" stroke-width="7" stroke-linecap="round"/>
       ${Array.from({ length: 11 }, (_, i) => `<circle cx="${cx - tw * 0.92 + i * tw * 0.184}" cy="${tubTop - 10 - (i % 2) * 6}" r="${11 + (i % 3) * 2.5}" fill="#fff" stroke="#d6e6f5" stroke-width="1.5"/>`).join("")}
     </g>` : "";
   const foam = tub ? [-0.4, 0, 0.35].map((t, i) => `<circle cx="${cx + t * hx}" cy="${H - hy * 0.92 + (i % 2) * 4}" r="${hx * 0.22}" fill="#fff" stroke="#d6e6f5" stroke-width="1.2"/>`).join("") : "";
@@ -401,32 +466,34 @@ function dogFront(st, look, expr, opts) {
   return `<svg class="dog-svg pose-front stage-${st} mood-${expr}" viewBox="0 0 240 240" role="img" aria-label="강아지">
     ${defsSvg(g, fur, face)}${clip}
     <ellipse class="ground-shadow" cx="${cx}" cy="${GROUND}" rx="${bx * 1.2}" ry="7" fill="rgba(40,60,40,.2)"/>
+    ${opts.prop === "bed" ? `<g class="svg-bed"><ellipse cx="${cx}" cy="${GROUND - 6}" rx="${Math.max(bx * 1.7, 90)}" ry="26" fill="#a996e0"/><ellipse cx="${cx}" cy="${GROUND - 12}" rx="${Math.max(bx * 1.45, 76)}" ry="17" fill="#e4dbfa"/><path d="M${cx - 70} ${GROUND - 30} q20 -10 40 0" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/></g>` : ""}
     <g class="dog-root" ${heaven ? 'opacity=".94"' : ""}>
       ${halo}${wearBehind}
-      <g class="tail" filter="url(#fur${g})" fill="${base}">${tailPath}</g>
+      ${back ? "" : `<g class="tail" filter="url(#fur${g})" fill="${base}">${tailPath}</g>`}
       <g filter="url(#fur${g})" fill="${base}">
-        ${haunch(-1)}${haunch(1)}
+        ${tub ? "" : haunch(-1) + haunch(1)}
         <path d="${mass}"/>
         ${tub ? "" : [["leg-l", cx - 17], ["leg-r", cx + 17]].map(([cl, x]) => `<g class="leg ${cl}"><path d="${legPath(x)}"/><ellipse cx="${x}" cy="${footY - 2}" rx="${b.legW * 0.56}" ry="${b.legW * 0.36}" fill="${belly}" filter="url(#sf2${g})"/></g>`).join("")}
         ${bodyFluff}
         <g filter="url(#sf2${g})">${bodyPatches}</g>
         <g clip-path="url(#cm${g})" filter="url(#sf${g})">${shading}</g>
       </g>
-      ${strokes}${dirt}
-      ${wear}${neck}${tubSvg}${bowl}
+      ${back ? "" : strokes}${dirt}
+      ${wear}${back ? "" : neck}${tubSvg}${bowl}
+      ${back ? `<g class="tail back-tail" filter="url(#fur${g})" fill="${base}"><path d="M${cx - 9} ${footY - 6} C${cx - 14} ${by}, ${cx - 6} ${by - bry * 0.6}, ${cx + 4} ${by - bry * 0.95} C${cx + 12} ${by - bry * 0.55}, ${cx + 10} ${by}, ${cx + 9} ${footY - 6} z"/></g>` : ""}
       <g class="head">
         ${face === "pointy" ? `<g filter="url(#fur${g})">${ears}</g>` : ""}
         <g filter="url(#fur${g})" fill="${base}">${head}${headFluff}
           <g filter="url(#sf2${g})">${headPatches}</g>
-          <g filter="url(#sf${g})"><ellipse cx="${cx - hx * 0.2}" cy="${H - hy * 0.55}" rx="${hx * 0.55}" ry="${hy * 0.3}" fill="${light}" opacity=".5"/><ellipse cx="${cx}" cy="${snY + b.snR * 0.75}" rx="${b.snR}" ry="${b.snR * 0.3}" fill="${dark}" opacity=".22"/></g>
+          <g filter="url(#sf${g})"><ellipse cx="${cx - hx * 0.2 + shiftE}" cy="${H - hy * 0.55}" rx="${hx * 0.55}" ry="${hy * 0.3}" fill="${light}" opacity=".5"/>${tv ? `<ellipse cx="${cx - hx * 0.85}" cy="${H + hy * 0.1}" rx="${hx * 0.3}" ry="${hy * 0.75}" fill="${dark}" opacity=".3"/>` : ""}<ellipse cx="${cx}" cy="${snY + b.snR * 0.75}" rx="${b.snR}" ry="${b.snR * 0.3}" fill="${dark}" opacity=".22"/></g>
         </g>
         ${face !== "pointy" && face !== "fluffy" ? `<g filter="url(#fur${g})">${ears}</g>` : ""}
-        ${brows}
-        <g class="eyes">${eyeSvg(expr, cx - ex, eyeY, eR, g)}${eyeSvg(expr, cx + ex, eyeY, eR, g)}</g>
-        ${blush}
-        ${noseSvg(cx, snY - b.snR * 0.22, b.snR * 0.52, g)}
-        ${mouthSvg(expr, cx, snY + b.snR * 0.18, b.snR * 0.7)}
-        ${opts.hat ? hatAt(opts.hat, cx, H - hy * 0.95, hx, [cx - ex, cx + ex], eyeY, b.eye, false) : ""}
+        ${back ? `<g filter="url(#sf${g})"><ellipse cx="${cx}" cy="${H + hy * 0.2}" rx="${hx * 0.7}" ry="${hy * 0.6}" fill="${dark}" opacity=".18"/></g>` : `${brows}
+        <g class="eyes"><g transform="translate(${eL} ${eyeY}) scale(${1 - tv * 0.28} 1) translate(${-eL} ${-eyeY})">${eyeSvg(expr, eL, eyeY, eR, g, 0)}</g>${eyeSvg(expr, eRx, eyeY, eR * (1 + tv * 0.05), g, 1)}</g>`}${expr === "shy" ? `<path d="M${cx - hx * 0.72} ${H + hy * 0.3} l5 -5 m3 7 l5 -5 M${cx + hx * 0.5} ${H + hy * 0.3} l5 -5 m3 7 l5 -5" stroke="#ff7b9c" stroke-width="2" stroke-linecap="round"/>` : ""}
+        ${back ? "" : `${blush}
+        ${noseSvg(snX + tv * 3, snY - b.snR * 0.22, b.snR * 0.52, g)}
+        ${mouthSvg(expr, snX, snY + b.snR * 0.18, b.snR * 0.7)}`}
+        ${opts.hat && !(back && opts.hat === "shades") ? hatAt(opts.hat, cx + shiftE * 0.5, H - hy * 0.95, hx, [eL, eRx], eyeY, b.eye, false) : ""}
         ${foam}
       </g>
     </g>
@@ -488,8 +555,8 @@ function dogSide(st, look, expr, opts) {
     else wear = garmentFit(opts.outfit, bodyD, bcx - brx * 1.1, hcx, bcy - bry * 1.2, bcy + bry * 0.3, g, true, bcx + brx * 0.45, bcx + brx * 0.82);
   }
   if (opts.outfit === "bowtie") neck = `<path d="M${hcx - hx * 0.3} ${hcy + hy * 0.95} l-10 -7 v14 z M${hcx - hx * 0.3} ${hcy + hy * 0.95} l10 -7 v14 z" fill="#2f3b52"/>`;
-  else if (!opts.outfit && st === "adult") neck = `<path d="M${hcx - hx * 0.75} ${hcy + hy * 0.55} Q${hcx - hx * 0.4} ${hcy + hy * 1.1} ${hcx + hx * 0.05} ${hcy + hy * 0.85}" stroke="#e0525f" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="${hcx - hx * 0.3}" cy="${hcy + hy * 1.08}" r="6" fill="#ffd34d" stroke="#d9a400" stroke-width="2"/>`;
-  else if (!opts.outfit && st === "teen") neck = `<path d="M${hcx - hx * 0.8} ${hcy + hy * 0.5} Q${hcx - hx * 0.4} ${hcy + hy * 1.0} ${hcx + hx * 0.05} ${hcy + hy * 0.75} L${hcx - hx * 0.55} ${hcy + hy * 1.45} z" fill="#5aa9e6"/>`;
+  else if (!opts.outfit && st === "adult") neck = `<path d="M${hcx - hx * 0.9} ${hcy + hy * 0.25} Q${hcx - hx * 0.75} ${hcy + hy * 0.95} ${hcx - hx * 0.15} ${hcy + hy * 0.98}" stroke="#e0525f" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="${hcx - hx * 0.42}" cy="${hcy + hy * 1.12}" r="6" fill="#ffd34d" stroke="#d9a400" stroke-width="2"/>`;
+  else if (!opts.outfit && st === "teen") neck = `<path d="M${hcx - hx * 0.9} ${hcy + hy * 0.25} Q${hcx - hx * 0.75} ${hcy + hy * 0.95} ${hcx - hx * 0.15} ${hcy + hy * 0.98} L${hcx - hx * 0.38} ${hcy + hy * 1.5} z" fill="#5aa9e6"/><circle cx="${hcx - hx * 0.5}" cy="${hcy + hy * 1.1}" r="2.5" fill="#fff"/>`;
   else if (!opts.outfit && senior) wear = garmentFit(heaven ? "angel" : "vest", bodyD, bcx - brx * 1.1, hcx, bcy - bry * 1.2, bcy + bry * 0.3, g, true, bcx + brx * 0.45, bcx + brx * 0.82);
   const sideGarment = opts.outfit && GARMENT[opts.outfit] ? opts.outfit : (!opts.outfit && senior ? (heaven ? "angel" : "vest") : null);
   const halo = heaven ? `<ellipse cx="${hcx}" cy="${hcy - hy - 12}" rx="${hx * 0.6}" ry="7" fill="none" stroke="#ffe48f" stroke-width="5"/><path d="M${bcx} ${bcy - bry * 0.6} q-30 -46 -66 -36 q24 18 36 44 z" fill="#fff" opacity=".95"/>` : "";
@@ -501,6 +568,7 @@ function dogSide(st, look, expr, opts) {
       ${halo}${behind}
       <g filter="url(#fur${g})">${legP("leg-bf", bcx - brx * 0.5, far)}${legP("leg-ff", bcx + brx * 0.5, far)}</g>
       <g class="tail" filter="url(#fur${g})">${tail}</g>
+      ${face === "fluffy" ? "" : `<g filter="url(#fur${g})" opacity=".85" transform="translate(${hx * 0.32} ${-hy * 0.06})">${ear.replace(/fill="url\(#ea\d+\)"/g, `fill="${shade(earCol, -0.28)}"`)}</g>`}
       <g filter="url(#fur${g})" fill="${base}">
         <path d="${torso}"/>
         <ellipse cx="${bcx - brx * 0.62}" cy="${bcy + bry * 0.25}" rx="${brx * 0.4}" ry="${bry * 0.8}"/>
@@ -511,16 +579,16 @@ function dogSide(st, look, expr, opts) {
       </g>
       ${opts.dirty ? `<g fill="#8c6a45" opacity=".6" filter="url(#sf2${g})"><circle cx="${bcx - 20}" cy="${bcy}" r="8"/><circle cx="${bcx + 18}" cy="${bcy + 10}" r="6"/></g>` : ""}
       ${wear}
-
+      ${neck}
+      ${opts.leash ? `<g class="leash-svg">${neck ? "" : `<path d="M${hcx - hx * 0.9} ${hcy + hy * 0.25} Q${hcx - hx * 0.75} ${hcy + hy * 0.95} ${hcx - hx * 0.15} ${hcy + hy * 0.98}" stroke="#e0525f" stroke-width="7" fill="none" stroke-linecap="round"/>`}<circle cx="${hcx - hx * 0.42}" cy="${hcy + hy * 1.1}" r="4" fill="none" stroke="#b8bec9" stroke-width="2.5"/><path d="M${hcx - hx * 0.42} ${hcy + hy * 1.1} Q${bcx + brx * 0.2} ${bcy - bry * 1.9} -20 ${bcy - bry * 2.6}" stroke="#e0525f" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>` : ""}
       <g class="head">
         <g filter="url(#fur${g})">${ear}</g>
         ${senior ? `<path d="M${eyeX - 9} ${eyeY - b.eye * 1.6} q9 -6 18 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>` : ""}
-        <g class="eyes">${eyeSvg(expr, eyeX, eyeY, b.eye * 1.15, g)}</g>
+        <g class="eyes">${eyeSvg(expr, eyeX, eyeY, b.eye * 1.15, g, 1)}</g>
         ${blush}
         ${noseSvg(snx + b.snR * 0.72, sny - b.snR * 0.28, b.snR * 0.4, g)}
-        ${["joy", "love", "bark"].includes(expr) ? `<path d="M${snx - 1} ${sny + b.snR * 0.4} q${b.snR * 0.3} ${b.snR * 0.55} ${b.snR * 0.65} 0" fill="#8a3b44"/><path d="M${snx + 1} ${sny + b.snR * 0.52} q${b.snR * 0.12} ${b.snR * 0.55} ${b.snR * 0.36} ${b.snR * 0.08}" fill="#ff8fa6"/>` : `<path d="M${snx - 2} ${sny + b.snR * 0.42} q${b.snR * 0.35} ${b.snR * 0.25} ${b.snR * 0.65} 0" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`}
-        ${neck}
-        ${opts.hat ? hatAt(opts.hat, hcx + 4, hcy - hy * 0.95, hx, eyeX, eyeY, b.eye, true) : ""}
+        ${["joy", "love", "bark", "wink", "star", "proud", "cry"].includes(expr) ? `<path d="M${snx - 1} ${sny + b.snR * 0.4} q${b.snR * 0.3} ${b.snR * 0.55} ${b.snR * 0.65} 0" fill="#8a3b44"/><path d="M${snx + 1} ${sny + b.snR * 0.52} q${b.snR * 0.12} ${b.snR * 0.55} ${b.snR * 0.36} ${b.snR * 0.08}" fill="#ff8fa6"/>` : `<path d="M${snx - 2} ${sny + b.snR * 0.42} q${b.snR * 0.35} ${b.snR * 0.25} ${b.snR * 0.65} 0" stroke="${INK}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`}
+        ${opts.hat ? hatAt(opts.hat, hcx + hx * (face === "pointy" ? 0.36 : 0.22), hcy - hy * 0.86, hx * 0.8, eyeX, eyeY, b.eye, true) : ""}
       </g>
     </g>
   </svg>`;
@@ -533,6 +601,9 @@ function dogSvg(stageId, look, expr = "happy", opts = {}) {
 
 function houseSvg(id) {
   switch (id) {
+    case "mushroom": return `<svg viewBox="0 0 120 110"><rect x="34" y="52" width="52" height="56" rx="10" fill="#fff4e0"/><path d="M48 108 v-26 a12 12 0 0 1 24 0 v26z" fill="#b07a4f"/><path d="M6 58 Q8 8 60 6 Q112 8 114 58 Q60 70 6 58 z" fill="#e0525f"/><circle cx="36" cy="30" r="8" fill="#fff"/><circle cx="74" cy="22" r="6" fill="#fff"/><circle cx="88" cy="44" r="7" fill="#fff"/><circle cx="56" cy="46" r="5" fill="#fff"/></svg>`;
+    case "igloo": return `<svg viewBox="0 0 120 110"><path d="M8 106 A52 52 0 0 1 112 106 z" fill="#f4fbff" stroke="#c6e2f5" stroke-width="2"/><path d="M14 84 H106 M24 64 H96 M40 46 H80" stroke="#c6e2f5" stroke-width="2"/><path d="M40 106 v-18 a20 20 0 0 1 40 0 v18z" fill="#7fb7e8"/></svg>`;
+    case "cloud": return `<svg viewBox="0 0 120 110"><g fill="#fff" stroke="#d6e6f5" stroke-width="2"><circle cx="34" cy="62" r="24"/><circle cx="62" cy="44" r="30"/><circle cx="90" cy="62" r="24"/><rect x="14" y="62" width="92" height="44" rx="20"/></g><path d="M46 106 v-24 a14 14 0 0 1 28 0 v24z" fill="#b9a6ff"/><circle cx="96" cy="24" r="6" fill="#ffe48f"/></svg>`;
     case "wood": return `<svg viewBox="0 0 120 110"><path d="M10 50 L60 8 L110 50 Z" fill="#9b6b47"/><rect x="18" y="48" width="84" height="58" fill="#c98a5f"/><path d="M18 64 h84 M18 80 h84 M18 96 h84" stroke="#a8724d" stroke-width="2"/><path d="M44 106 v-30 a16 16 0 0 1 32 0 v30z" fill="#4a2f22"/></svg>`;
     case "redroof": return `<svg viewBox="0 0 120 110"><path d="M4 52 L60 4 L116 52 Z" fill="#e0525f"/><rect x="16" y="50" width="88" height="56" fill="#fff4e0"/><path d="M44 106 v-32 a16 16 0 0 1 32 0 v32z" fill="#5b3a2a"/><rect x="48" y="26" width="24" height="12" rx="3" fill="#fff"/><text x="60" y="35" text-anchor="middle" font-size="9" fill="#e0525f">멍</text></svg>`;
     case "tent": return `<svg viewBox="0 0 120 110"><path d="M60 6 L112 106 H8 Z" fill="#9fd0ff"/><path d="M60 6 L34 106 M60 6 L86 106" stroke="#fff" stroke-width="10"/><path d="M60 50 L44 106 H76 Z" fill="#2f3b52"/><path d="M60 6 l0 -6 l14 4 l-14 4" fill="#ff9aa8"/></svg>`;

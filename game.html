@@ -55,11 +55,14 @@
   <section id="play-area" class="play-area" hidden>
     <div id="scene" class="scene" data-anim="">
       <div class="rainbow" aria-hidden="true"></div>
+      <div id="scene-place" class="scene-place" aria-hidden="true"></div>
       <div id="scene-decor" class="scene-decor"></div>
+      <div id="door" class="door" role="button" aria-label="밖으로 나가기"></div>
       <div id="scene-back" class="scene-back" aria-hidden="true"></div>
-      <div id="scene-house" class="scene-house" aria-hidden="true"></div>
+      <div id="scene-house" class="scene-house" role="button" aria-label="집 안으로 들어가기"></div>
+      <div id="scene-toy" class="scene-toy" aria-hidden="true"></div>
       <p id="bubble" class="bubble" aria-live="polite"></p>
-      <div id="dog-stage" class="dog-stage" title="쓰다듬기"></div>
+      <div id="dog-pos" class="dog-pos"><div id="dog-stage" class="dog-stage" title="쓰다듬기"></div></div>
       <div id="scene-fx" class="scene-fx" aria-hidden="true"></div>
       <div id="mess" class="mess"></div>
       <p id="lonely" class="lonely" hidden></p>
@@ -110,7 +113,7 @@
             <input id="sound-vol" type="range" min="0" max="1" step="0.05">
           </div>
         </div>
-        <p class="muted small-note">훈련 — 성공할수록 잘 배워요</p>
+        <p class="muted small-note">훈련 — 성공할수록 잘 배워요 · 바닥을 톡 누르면 걸어가고, 하늘을 누르면 점프, 집을 누르면 집 안으로 들어가요</p>
         <div id="tricks" class="tricks"></div>
       </section>
 
